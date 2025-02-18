@@ -1,0 +1,187 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+*{
+    margin: 0px;
+    padding: 0;
+    box-sizing: border-box;
+}
+body{
+    min-height: 100%;
+    /* background-color: #f8fbfb; */
+}
+canvas{
+    border: 1px black solid;
+    width: 100%;
+    /* height: 80%; */
+    cursor: auto;
+    border: none;
+    /* background-color: #FBFBF8; */
+
+}
+.toolbar{
+    height: 5vh;
+    width: 90%;
+    margin-top: 10px;
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 0px 2px black;
+    border-radius: 10px;
+    padding: 25px;
+}
+.properties{
+    width: 19%;
+    height: 70%;
+    box-shadow: 0px 0px 2px black;
+    border-radius:10px ;
+    position: absolute;
+    left: 10px;
+    top: 10%;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    font-family: "Nunito", serif;
+    font-optical-sizing: auto;
+    font-weight: 900;
+    font-style: normal;
+    visibility: hidden;
+}
+.wrapper{
+    display: flex;
+    column-gap: 20px;
+}
+/* Style the range input itself */
+input[type="range"] {
+    -webkit-appearance: none;  /* Remove default appearance in Webkit browsers (Chrome, Safari) */
+    -moz-appearance: none;     /* Remove default appearance in Firefox */
+    appearance: none;          /* Standard way to remove default appearance */
+    width: 100%;               /* Full width */
+    height: 8px;               /* Track height */
+    background: linear-gradient(to right, #6B9797 0%, #6B9797 50%, #ddd 50%, #ddd 100%); /* Gradient with two colors */
+    border-radius: 5px;        /* Rounded corners */
+    outline: none;             /* Remove outline when focused */
+    position: relative;        /* Position relative for track positioning */
+  }
+  
+  /* Style the thumb (the draggable part of the slider) */
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;  /* Remove default thumb appearance */
+    appearance: none;
+    width: 20px;               /* Thumb width */
+    height: 20px;              /* Thumb height */
+    border-radius: 50%;        /* Circular thumb */
+    background: #6B9797;       /* Thumb color */
+    cursor: pointer;          /* Change cursor to pointer on hover */
+    margin-top: -6px;          /* Adjust the thumb position to center it vertically */
+  }
+  
+  /* Firefox styling for thumb */
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #6B9797;       /* Thumb color */
+    cursor: pointer;
+    margin-top: -6px;          /* Adjust the thumb position to center it vertically */
+  }
+  
+  /* Optional: Add focus styling to input */
+  input[type="range"]:focus {
+    outline: none;             /* Remove outline */
+    border: 2px solid #6B9797; /* Optional: Add border when focused with the same color */
+  }
+  
+  
+.color-btn,.background-color-btn{
+    width: 35px;
+    height: 40px;
+    outline: none;
+    border: none;
+    border-radius: 3px;
+}
+.color-buttons-container button:nth-child(1) {
+    background-color: black;
+}
+.color-buttons-container button:nth-child(2) {
+    background-color: red;
+}
+.color-buttons-container button:nth-child(3) {
+    background-color: blue;
+}
+.color-buttons-container button:nth-child(4) {
+    background-color: green;
+}
+.color-buttons-container button:nth-child(5) {
+    background-color: orange;
+}
+
+.background-color-buttons-container button:nth-child(1) {
+    background-color: transparent;
+    background-image: url('./src/transparentBG.png');
+    background-size:200%;
+    background-position: center;
+}
+.background-color-buttons-container button:nth-child(2) {
+    background-color: #E8C7C8;
+}
+.background-color-buttons-container button:nth-child(3) {
+    background-color: #87CEEB;
+}
+.background-color-buttons-container button:nth-child(4) {
+    background-color: #D3EEDD;
+}
+.background-color-buttons-container button:nth-child(5) {
+    background-color: #FFFFBF;
+}
+
+.color-input{
+    
+    width: 40px;
+    height: 46px;
+    outline: none;
+    border: none;
+    border-radius: 3px;
+    background-color: transparent;
+}
+
+label{
+    font-family: "Nunito", serif;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+    padding-block: 10px;
+ }
+
+.toolbar button{
+    border: 0px;
+    border-radius: 7px;
+    background-color: transparent;
+    padding: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.toolbar button:hover{
+    background-color: rgb(222, 222, 222);
+}
+
+button img{
+    width: 30px; 
+}
+.trial{
+    position: absolute;
+    right: 10px;
+    min-height: 100px;
+    min-width: 30%;
+    top: 10%;
+    border: black solid 5px;
+}
+
+@media screen  and (min-width: 768px){
+    .toolbar{
+    width: 691px;
+    }
+}

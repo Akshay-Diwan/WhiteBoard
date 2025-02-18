@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="toolbar">
+        <button id="rectangle"><img src="src/rectangle.webp" alt="rectangle"></button>
+        <button id="ellipse"><img src="src/circle.png" alt="rectangle"></button>
+        <button id="line"><img src="src/line.png" alt=""></button>
+        <button><img src="src/arrow.png" alt=""></button>
+        <button id="draw"><img src="src/draw.png" alt=""></button>
+        <button id="text"><img src="src/text.webp" alt=""></button>
+        <button id="eraser"><img src="src/erase.png" alt=""></button>
+
+    </nav>
+    <canvas id="whiteboard" ></canvas>
+    <nav id="properties" class="properties">
+
+        <label for="stroke">Stroke</label>
+        <div class="wrapper">
+        <div class="color-buttons-container">
+            <button class="color-btn"></button>
+            <button class="color-btn"></button>
+            <button class="color-btn"></button>
+            <button class="color-btn"></button>
+            <button class="color-btn"></button>
+        </div>
+        <input class="color-input" id="stroke" name="stroke" type="color">
+    </div>
+        <label for="strokeWidth">Stroke Width</label>
+        <input class = "range-input" type="range" id="strokeWidth" name="strokeWidth" min="0" max="2" step="1" value="1">
+
+        <label for="opacity">Opacity</label>
+        <input class="range-input" type="range" id="opacity" name="opacity" min="0" max="10" step="1" value="10">
+
+        <label for="fill">Background</label>
+        <div class="wrapper">
+        <div class="background-color-buttons-container">
+            <button class="background-color-btn"></button>
+            <button class="background-color-btn"></button>
+            <button class="background-color-btn"></button>
+            <button class="background-color-btn"></button>
+            <button class="background-color-btn"></button>
+        </div>
+        <input class = "color-input" id="fill" name="fill" type="color">
+    </div>
+    </nav>
+    <!-- <ul class="trial" id="trial"> -->
+
+    </ul>
+   <script src="index.js"></script>
+   <!-- <script type="module" src="objects/rectangle.js"></script> -->
+</body>
+</html>
