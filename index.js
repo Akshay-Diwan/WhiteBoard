@@ -174,10 +174,10 @@ const handleColorBtnClick = (background, e) => {
   deleteRectangle();
   otherShapes = shapes.filter(shape => shape.name != currentShape.name);
 
- 
-  otherShapes.map(shape => shape.createShape(shape));
+  otherShapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   shapes = [...otherShapes, currentShape];
+  localStorage.setItem('shapes', JSON.stringify(shapes));
 }
 }
 };
@@ -466,13 +466,13 @@ const inRange = (rectangle, e) => {
 };
 const inShape = (shape, e)=>{
   console.log("inside inShape function...");
-  if(shape.createShape === createRectangle){
+  if(shape.createShape === 'createRectangle'){
     if(e.offsetX > shape.x && e.offsetX < shape.width + shape.x && e.offsetY > shape.y && e.offsetY < shape.y + shape.length){
       console.log('inside rectangle');
       return true;
     }
   }
-  if(shape.createShape === createEllipse){
+  if(shape.createShape === 'createEllipse'){
     const cx = (shape.x + (shape.x + shape.width)) / 2;
     const cy = (shape.y + (shape.y + shape.length)) / 2;
     const rx = (shape.width) / 2;
@@ -482,13 +482,16 @@ const inShape = (shape, e)=>{
       return true;
     }
   }
-  if(shape.createShape === createArbitary){
-    const idx = shape.points.map((point)=> point.x === e.offsetX && point.y === e.offsetY).indexOf(true);
+  if(shape.createShape === 'createArbitary'){
+    console.log("inside arbitary...");
+    console.log(`x: ${JSON.parse(shape.points)[0].x},y: ${JSON.parse(shape.points)[0].y}`);
+    const idx = JSON.parse(shape.points).map((point)=> filterfunction(point, e)).indexOf(true);
+    console.log("idx: "+ idx);
     if(idx != -1){
       return true;
     }
   }
-  if(shape.createShape === createLine){
+  if(shape.createShape === 'createLine'){
     console.log("first slope: "+(shape.y - e.offsetY)/(shape.x - e.offsetX) + " second slope: "+(shape.y - shape.endY)/(shape.x - shape.endX) );
     if(e.offsetX > shape.x && e.offsetX < shape.endX && e.offsetY > shape.y && e.offsetY < shape.endY){
       console.log('inside line');
@@ -496,6 +499,12 @@ const inShape = (shape, e)=>{
     }
   }
   
+}
+//trial
+const filterfunction = (point, e)=>{
+  console.log("pointer x: "+ e.offsetX + " pointer y: " + e.offsetY);
+  // console.log(`x: ${point.x}, y: ${point.y}`);
+  return point.x - 10 < e.offsetX && point.x + 10 > e.offsetX &&  point.y - 10 < e.offsetY && point.y + 10 > e.offsetY;
 }
 // || CHECKING POINTER POSITION END
 
@@ -624,6 +633,7 @@ const handleMouseMove = (e) => {
     shapes = shapes.filter(shape => !inShape(shape, e));
     deleteRectangle();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
+    localStorage.setItem('shapes', JSON.stringify(shapes));
   // if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
     return;
   }
@@ -730,7 +740,7 @@ const handleMouseUp = () => {
     );
   }
   command = null;
-  if(!currentShape.name){
+  if(!currentShape){
     return;
   }
   shapes = [...shapes, { ...currentShape }];
@@ -755,7 +765,6 @@ const handleMouseUp = () => {
 };
 // || MOUSE EVENTS END
 
-
 // || HANDLING KEY EVENTS
 const handleKeyDown = (e)=>{
   if(e.key === "Delete"){
@@ -772,6 +781,7 @@ const handleKeyDown = (e)=>{
   currentShape = null;
     deleteRectangle();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
+    localStorage.setItem('shapes', JSON.stringify(shapes));
   ShapeList.innerHTML = '';
     for(i in shapes){
       ShapeList.innerHTML += `<li>${shapes[i].name}</li>`;
@@ -848,7 +858,7 @@ function resizeCanvas() {
   canvas.height = window.innerHeight * 0.95;
   
     shapes.map(shape => shapeCreator[shape.createShape](shape));
-  if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
+  if(currentShape && currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
 }
 
 // // Initial resize
