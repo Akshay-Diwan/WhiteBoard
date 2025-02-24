@@ -1,8 +1,22 @@
+const ws = new WebSocket('ws://localhost:8080');
+ws.onopen = ()=>{
+  console.log('ws opened in browser');
+  ws.send(JSON.stringify({message:'hello World'}));
+}
+
+ws.onclose = function(event) {
+  console.log('WebSocket connection closed:', event);
+  if (event.wasClean) {
+      console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
+  } else {
+      console.log('Connection died');
+  }
+};
 // import { createRectangle, deleteRectangle } from "./objects/rectangle.js";
 const canvas = document.getElementById("whiteboard");
 // const circle = document.getElementById("circle");
 
-
+setTimeout(1000);
 // || CREATING AND DELETING OBJECTS
 const deleteRectangle = () => {
   if(canvas.getContext){
@@ -105,7 +119,7 @@ createArbitary: function(shape, multX = 1, multY = 1,moveX = 0, moveY = 0){
     //handwritten
     ctx.beginPath();
     ctx.moveTo(shape.points[0].x,shape.points[0].y);
-    for(j in shape.points){
+    for(let j in shape.points){
       ctx.lineTo(shape.points[j].x , shape.points[j].y);
     }
     ctx.stroke();
@@ -120,7 +134,7 @@ createArbitary: function(shape, multX = 1, multY = 1,moveX = 0, moveY = 0){
 const findCorners = ()=>{
   let minX = canvas.offsetWidth, minY = canvas.offsetHeight, maxX = 0, maxY = 0;
   // console.log(JSON.parse(currentShape.points)[0]);
-  for(i in JSON.parse(currentShape.points)){
+  for(let i in JSON.parse(currentShape.points)){
     if(minX === null || minX > JSON.parse(currentShape.points)[i].x){
       minX = JSON.parse(currentShape.points)[i].x;
     }
@@ -172,12 +186,14 @@ const handleColorBtnClick = (background, e) => {
     currentShape.color = hexColor;
   }
   deleteRectangle();
-  otherShapes = shapes.filter(shape => shape.name != currentShape.name);
+  let otherShapes = shapes.filter(shape => shape.name != currentShape.name);
 
   otherShapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   shapes = [...otherShapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
+  ws.send(localStorage.getItem('shapes'));
+
 }
 }
 };
@@ -197,12 +213,10 @@ let permission = false;
 
 // || SHAPES OBJECT STORAGE
 let shapes =[];
+
 if(localStorage.getItem('shapes')) shapes = JSON.parse(localStorage.getItem('shapes'));
 
 console.log(shapes);
-for( i in shapes){
-  console.log(shapes[i].name);
-}
 let currentShape = {
   name: null,
   createShape: null,
@@ -238,6 +252,9 @@ const opacityProperty = document.getElementById("opacity");
 const ShapeList = document.getElementById("trial");
 const colorBtns = document.getElementsByClassName("color-btn");
 const backgroundColorBtns = document.getElementsByClassName("background-color-btn");
+const shareBtn = document.getElementById("share");
+const dialog = document.getElementById("dialogBox");
+const startLive = document.getElementById("startLive");
 let currentFunction = {
   // createfunction: null,
   deletefunction: null,
@@ -268,6 +285,8 @@ const rectangleSelected = () => {
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
+  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
+
   console.log("idx: " + idx);
   command = createRect;
   canvas.style.cursor = "crosshair";
@@ -293,6 +312,7 @@ const ellipseSelected = () =>{
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
+  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
 
   command = createRect;
   canvas.style.cursor = "crosshair";
@@ -318,6 +338,7 @@ const lineSelected = () =>{
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
+  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
 
   command = createLn;
   canvas.style.cursor = "crosshair";
@@ -340,6 +361,8 @@ const drawSelected =()=>{
   }
   idx = idx + 1;
   localStorage.setItem('idx', idx);
+  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
+
 
   command = draw;
   // currentFunction.createfunction = 'createArbitary';
@@ -371,6 +394,12 @@ const eraserSelected = ()=>{
     console.log("Eraser Selected");
     command = erase;
 }
+}
+const handleShareClick = ()=>{
+  dialog.showModal();
+}
+const handleDialogClick = ()=>{
+  dialog.close();
 }
 // || BUTTON FUNCTION ENDS
 
@@ -634,6 +663,8 @@ const handleMouseMove = (e) => {
     deleteRectangle();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
+    ws.send(localStorage.getItem('shapes'));
+
   // if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
     return;
   }
@@ -645,6 +676,9 @@ const handleMouseMove = (e) => {
       }]);
       shapes.map(shape => shapeCreator[shape.createShape](shape));
       if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
+      localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
+      ws.send(localStorage.getItem('shapes'));
+
       return;
     }
   
@@ -654,6 +688,8 @@ const handleMouseMove = (e) => {
     currentShape.endY = e.offsetY;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
+    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
+      ws.send(localStorage.getItem('shapes'));
     return;
   }
   if (command === moveRect) {
@@ -672,7 +708,8 @@ const handleMouseMove = (e) => {
     return;
     }
     shapeCreator[currentShape.createShape](currentShape);
-
+    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
+      ws.send(localStorage.getItem('shapes'));
   }
   if (command === editRect) {
     deleteRectangle();
@@ -694,6 +731,8 @@ const handleMouseMove = (e) => {
     shapeCreator[currentShape.createShape](currentShape, 1 + changeX, 1 + changeY);
     return;
     }
+    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
+      ws.send(localStorage.getItem('shapes'));
     shapeCreator[currentShape.createShape](currentShape);
     return;
   }
@@ -710,6 +749,8 @@ const handleMouseMove = (e) => {
     currentShape.width = Math.abs(fixedCorner.x - e.offsetX);
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
+    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
+      ws.send(localStorage.getItem('shapes'));
     return;
 };
 }
@@ -745,22 +786,24 @@ const handleMouseUp = () => {
   }
   shapes = [...shapes, { ...currentShape }];
   console.log("Current Shape:");
-  for(j in currentShape){
+  for(let j in currentShape){
     console.log(currentShape[j]);
   }
   console.log("Shapes: ");
-  for(j in shapes){
+  for(let j in shapes){
     console.log(shapes[j]);
   }
   
   localStorage.setItem('shapes', JSON.stringify(shapes));
+  ws.send(localStorage.getItem('shapes'));
+
   // currentFunction.createfunction = null;
   currentFunction.deletefunction = null;
   canvas.style.cursor = "auto";
   // ShapeList.innerHTML = '';
-  for(i in shapes){
+  for(let j in shapes){
     // ShapeList.innerHTML += `<li>${shapes[i].name}</li>`;
-    console.log(shapes[i]);
+    console.log(shapes[j]);
   }
 };
 // || MOUSE EVENTS END
@@ -770,6 +813,7 @@ const handleKeyDown = (e)=>{
   if(e.key === "Delete"){
     let otherShapes = shapes.filter(shape => shape.name != currentShape.name);
     localStorage.setItem('shapes', JSON.stringify(shapes));
+    ws.send(localStorage.getItem('shapes'));
     shapes = otherShapes;
   console.log("Deleted object: "+ currentShape.name);
     // permission = false;
@@ -782,10 +826,12 @@ const handleKeyDown = (e)=>{
     deleteRectangle();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
+    ws.send(localStorage.getItem('shapes'));
+
   ShapeList.innerHTML = '';
-    for(i in shapes){
-      ShapeList.innerHTML += `<li>${shapes[i].name}</li>`;
-      console.log(shapes[i]);
+    for(let j in shapes){
+      ShapeList.innerHTML += `<li>${shapes[j].name}</li>`;
+      console.log(shapes[j]);
     }
   }
 }
@@ -802,6 +848,8 @@ const handleColorChange=(e)=>{
   // console.log(currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
+  ws.send(localStorage.getItem('shapes'));
+
   // console.log("shapes created");
 
 }
@@ -826,6 +874,8 @@ const handleStrokeWidthChange=(e)=>{
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
+  ws.send(localStorage.getItem('shapes'));
+
 
 }
 const handleBackgroundChange = (e)=>{
@@ -838,6 +888,8 @@ const handleBackgroundChange = (e)=>{
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
+  ws.send(localStorage.getItem('shapes'));
+
 
 }
 const handleOpacityChange = (e)=>{
@@ -850,6 +902,8 @@ const handleOpacityChange = (e)=>{
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
+  ws.send(localStorage.getItem('shapes'));
+
 }
 
 // // Resize canvas to match the viewport size
@@ -877,11 +931,32 @@ colorProperty.addEventListener("change", handleColorChange);
 strokeWidthProperty.addEventListener("change", handleStrokeWidthChange);
 backgroundProperty.addEventListener("change", handleBackgroundChange);
 opacityProperty.addEventListener("change", handleOpacityChange);
+shareBtn.addEventListener("click", handleShareClick);
+dialog.addEventListener("click", handleDialogClick);
 console.log(colorBtns);
-for(j in colorBtns) colorBtns[j].onclick = (e) =>handleColorBtnClick(false, e);
-for(j in colorBtns) backgroundColorBtns[j].onclick = (e) => handleColorBtnClick(true, e);
+for(let j in colorBtns) {
+  if(!Number.isFinite(colorBtns[j]))
+  colorBtns[j].onclick = (e) =>handleColorBtnClick(false, e);
+}
+for(let j in colorBtns){
+  if(!Number.isFinite(backgroundColorBtns[j]))
+   backgroundColorBtns[j].onclick = (e) => handleColorBtnClick(true, e);
+  }
 
 window.addEventListener("resize", resizeCanvas);
 document.addEventListener("keydown", handleKeyDown);
 
 // || ADDING EVENTLISTENERS END
+ws.onmessage = (message)=>{
+  console.log(`message received`, message.data);
+  const obj = JSON.parse(message.data);
+  if(Array.isArray(obj)){
+    shapes = [...obj];
+    deleteRectangle();
+    shapes.map((shape)=> shapeCreator[shape.createShape](shape));
+    localStorage.setItem('shapes', message.data);
+  }
+  else if(obj.idx){
+    idx = obj.idx;
+  }
+}

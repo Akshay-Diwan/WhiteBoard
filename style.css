@@ -1,5 +1,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
 *{
     margin: 0px;
@@ -36,6 +37,7 @@ canvas{
     height: 70%;
     box-shadow: 0px 0px 2px black;
     border-radius:10px ;
+    background-color: white;
     position: absolute;
     left: 10px;
     top: 10%;
@@ -47,6 +49,7 @@ canvas{
     font-weight: 900;
     font-style: normal;
     visibility: hidden;
+  
 }
 .wrapper{
     display: flex;
@@ -167,6 +170,48 @@ label{
 .toolbar button:hover{
     background-color: rgb(222, 222, 222);
 }
+.button-grp{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+}
+.share, .library{
+    padding-inline: 10px;
+    padding-block: 10px;
+    margin-inline: 5px;
+    background-color:  #80669d;
+    color: white;
+    border: 0px;
+    outline: none;
+    border-radius: 7px;
+    text-align: center;
+    display: flex;
+    font-family: "Nunito", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    align-items: center;
+    justify-content: center;
+}
+.share:hover{
+    cursor: pointer;
+    background-color: #5f487a;
+}
+.library{
+    background-color: #E5E4E2;
+    color: #0C090A;
+}
+.library:hover{
+    cursor: pointer;
+    background-color: #B6B6B4;
+}
+button:hover{
+    cursor: pointer;
+}
+input:hover{
+    cursor: pointer;
+}
 
 button img{
     width: 30px; 
@@ -179,9 +224,78 @@ button img{
     top: 10%;
     border: black solid 5px;
 }
+.dialog-box{
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.174);
+    position: fixed;
+    top: 0px;
+    border: 0px;
+}
+.collaborate{
+    margin-top: 5%;
+    margin-inline: auto;
+    width: 90%;
+    height: 50%;
+    z-index: 1;
+    text-align: center;
+    padding: 10px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 1px 1px 10px black;
+
+}
+.nunito{
+    font-family: "Nunito", serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+}
+.poppins-regular {
+    font-family: "Poppins", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+.dialog-box-heading{
+    
+    font-family: "Poppins", serif;
+    font-weight: 600;
+    color: #6F42C1;
+    /* color: #0073cf; */
+    font-style: normal;
+    font-size: 1.75rem;
+    margin: 10px;
+}
+.dialog-box-text{
+    font-size: 0.8rem;
+    
+}
+.startLive{
+    margin-top:30px;
+    background-color: #6F42C1;
+    color: whitesmoke;
+    outline: none;
+    border: 0px;
+    padding-inline: 10px;
+    padding-block: 12px;
+    font-size: 1rem;
+    border-radius: 7px;
+    margin-inline:auto ;
+    display: flex;
+    column-gap: 10px;
+    align-items: center;
+}
+.play-button{
+    width: 20px;
+    display: inline;
+}
 
 @media screen  and (min-width: 768px){
     .toolbar{
     width: 691px;
+    }
+    .collaborate{
+        width: 500px;
     }
 }
