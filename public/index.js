@@ -1,19 +1,31 @@
-const ws = new WebSocket('ws://localhost:8080');
-ws.onopen = ()=>{
-  console.log('ws opened in browser');
-  ws.send(JSON.stringify({message:'hello World'}));
-}
-
-ws.onclose = function(event) {
-  console.log('WebSocket connection closed:', event);
-  if (event.wasClean) {
-      console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
-  } else {
-      console.log('Connection died');
+import * as exp from './objects/Dom.js';
+let shapes =[];
+let sharing = false;
+if(localStorage.getItem('shapes')) shapes = JSON.parse(localStorage.getItem('shapes'));
+const socket = io();
+socket.on('message', (message)=>{
+  console.log('here we are in recieved messsage', message);
+  shapes = [...message];
+  localStorage.setItem('shapes', JSON.stringify(shapes));
+  deleteRectangle();
+  shapes.map(shape=> shapeCreator[shape.createShape](shape));
+})
+socket.on('room id', (room)=>{
+  localStorage.setItem('roomID', room);
+})
+const sendToServer = (message)=>{
+  if(sharing){
+    console.log("here we are in send To server");
+    console.log("this is the room id: ", localStorage.getItem('roomID'));
+    socket.emit('message', message, localStorage.getItem('roomID'));
   }
-};
+}
+const sendIndex = (index)=>{
+  if(sharing){
+    socket.emit('index', index);
+  }
+}
 // import { createRectangle, deleteRectangle } from "./objects/rectangle.js";
-const canvas = document.getElementById("whiteboard");
 // const circle = document.getElementById("circle");
 
 setTimeout(1000);
@@ -192,7 +204,7 @@ const handleColorBtnClick = (background, e) => {
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   shapes = [...otherShapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer(shapes)
 
 }
 }
@@ -212,9 +224,7 @@ let permission = false;
 // || COMMANDS END
 
 // || SHAPES OBJECT STORAGE
-let shapes =[];
 
-if(localStorage.getItem('shapes')) shapes = JSON.parse(localStorage.getItem('shapes'));
 
 console.log(shapes);
 let currentShape = {
@@ -238,23 +248,7 @@ let fixedCorner = {
 
 // || DEFINING BUTTONS
 
-const rectBtn = document.getElementById("rectangle");
-const ellipseBtn = document.getElementById("ellipse");
-const lineBtn = document.getElementById("line");
-const drawBtn = document.getElementById("draw");
-const textBoxBtn = document.getElementById("text");
-const eraser = document.getElementById('eraser');
-const propertiesCard = document.getElementById("properties");
-const colorProperty = document.getElementById("stroke");
-const strokeWidthProperty = document.getElementById("strokeWidth");
-const backgroundProperty = document.getElementById("fill");
-const opacityProperty = document.getElementById("opacity");
-const ShapeList = document.getElementById("trial");
-const colorBtns = document.getElementsByClassName("color-btn");
-const backgroundColorBtns = document.getElementsByClassName("background-color-btn");
-const shareBtn = document.getElementById("share");
-const dialog = document.getElementById("dialogBox");
-const startLive = document.getElementById("startLive");
+
 let currentFunction = {
   // createfunction: null,
   deletefunction: null,
@@ -285,7 +279,8 @@ const rectangleSelected = () => {
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
-  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
+  sendIndex(idx);
+ 
 
   console.log("idx: " + idx);
   command = createRect;
@@ -312,7 +307,7 @@ const ellipseSelected = () =>{
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
-  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
+  sendIndex(idx);
 
   command = createRect;
   canvas.style.cursor = "crosshair";
@@ -338,7 +333,8 @@ const lineSelected = () =>{
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
-  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
+  sendIndex(idx);
+  
 
   command = createLn;
   canvas.style.cursor = "crosshair";
@@ -361,7 +357,8 @@ const drawSelected =()=>{
   }
   idx = idx + 1;
   localStorage.setItem('idx', idx);
-  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
+  sendIndex(idx);
+
 
 
   command = draw;
@@ -398,8 +395,49 @@ const eraserSelected = ()=>{
 const handleShareClick = ()=>{
   dialog.showModal();
 }
-const handleDialogClick = ()=>{
+const handleDialogClick =(e)=>{
+  try{
+    e.target.close();
+  }catch(err){
+
+  }
+  
+}
+// let room = 1;
+const handleStartLiveClick = (e)=>{
+  e.preventDefault();
   dialog.close();
+  stopbox.showModal();
+  collabLink.innerText = socket.id;
+  sharing = true;
+  localStorage.setItem('roomID', socket.id);
+  socket.emit('join',localStorage.getItem('roomID'));
+  
+  
+}
+const handleStopLiveClick = (e)=>{
+  e.preventDefault();
+  socket.emit('leave', localStorage.getItem('roomID'));
+  localStorage.removeItem('roomID');
+  sharing = false;
+  stopbox.close();
+}
+const handleCloseClick = (e)=>{
+  e.preventDefault();
+  inputBox.close();
+}
+const handleJoinAnother= (e)=>{
+  e.preventDefault();
+  dialog.close();
+  inputBox.showModal();
+}
+const handleJoinClick = (e)=>{
+  e.preventDefault();
+  localStorage.setItem('roomID',linkInput.value);
+  console.log("Join button is clicked", localStorage.getItem('roomID'));
+  socket.emit('join', localStorage.getItem('roomID'));
+  sharing = true;
+  inputBox.close();
 }
 // || BUTTON FUNCTION ENDS
 
@@ -414,7 +452,6 @@ const onEdge = (rectangle, x, y) => { // Check if the pointer is near the left o
     Math.abs(x - (rectangle.x + rectangle.width)) <= buffer &&
     y >= rectangle.y &&
     y <= rectangle.y + rectangle.length;
-
   // Check if the pointer is near the top or bottom edge
   const nearTopEdge =
     Math.abs(y - rectangle.y) <= buffer &&
@@ -663,7 +700,7 @@ const handleMouseMove = (e) => {
     deleteRectangle();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
-    ws.send(localStorage.getItem('shapes'));
+    sendToServer(shapes);
 
   // if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
     return;
@@ -677,7 +714,7 @@ const handleMouseMove = (e) => {
       shapes.map(shape => shapeCreator[shape.createShape](shape));
       if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
       localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
+      sendToServer(shapes);
 
       return;
     }
@@ -689,7 +726,7 @@ const handleMouseMove = (e) => {
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
+      sendToServer(shapes);
     return;
   }
   if (command === moveRect) {
@@ -709,7 +746,7 @@ const handleMouseMove = (e) => {
     }
     shapeCreator[currentShape.createShape](currentShape);
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
+      sendToServer(shapes);
   }
   if (command === editRect) {
     deleteRectangle();
@@ -727,12 +764,12 @@ const handleMouseMove = (e) => {
     // currentFunction.createfunction();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     // console.log("create Shape for currentShape is : "+ currentShape.createShape);
+    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
+      sendToServer(shapes);
     if(currentShape.points){
     shapeCreator[currentShape.createShape](currentShape, 1 + changeX, 1 + changeY);
     return;
     }
-    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
     shapeCreator[currentShape.createShape](currentShape);
     return;
   }
@@ -747,10 +784,11 @@ const handleMouseMove = (e) => {
     canvas.style.cursor = "auto";
     currentShape.length = Math.abs(fixedCorner.y - e.offsetY);
     currentShape.width = Math.abs(fixedCorner.x - e.offsetX);
+    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
+    sendToServer(shapes);
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
-    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
+   
     return;
 };
 }
@@ -795,7 +833,7 @@ const handleMouseUp = () => {
   }
   
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer(shapes);
 
   // currentFunction.createfunction = null;
   currentFunction.deletefunction = null;
@@ -813,7 +851,7 @@ const handleKeyDown = (e)=>{
   if(e.key === "Delete"){
     let otherShapes = shapes.filter(shape => shape.name != currentShape.name);
     localStorage.setItem('shapes', JSON.stringify(shapes));
-    ws.send(localStorage.getItem('shapes'));
+    sendToServer(shapes);
     shapes = otherShapes;
   console.log("Deleted object: "+ currentShape.name);
     // permission = false;
@@ -826,7 +864,7 @@ const handleKeyDown = (e)=>{
     deleteRectangle();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
-    ws.send(localStorage.getItem('shapes'));
+    sendToServer(shapes);
 
   ShapeList.innerHTML = '';
     for(let j in shapes){
@@ -848,7 +886,7 @@ const handleColorChange=(e)=>{
   // console.log(currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer(shapes);
 
   // console.log("shapes created");
 
@@ -871,10 +909,10 @@ const handleStrokeWidthChange=(e)=>{
   shapes.map(shape => shapeCreator[shape.createShape](shape));
   // console.log(currentShape.createShape);
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
-  othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
+  const othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer(shapes);
 
 
 }
@@ -888,7 +926,7 @@ const handleBackgroundChange = (e)=>{
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer(shapes);
 
 
 }
@@ -902,7 +940,7 @@ const handleOpacityChange = (e)=>{
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer(shapes);
 
 }
 
@@ -932,7 +970,14 @@ strokeWidthProperty.addEventListener("change", handleStrokeWidthChange);
 backgroundProperty.addEventListener("change", handleBackgroundChange);
 opacityProperty.addEventListener("change", handleOpacityChange);
 shareBtn.addEventListener("click", handleShareClick);
+startLive.addEventListener("click", handleStartLiveClick);
+stopLive.addEventListener("click", handleStopLiveClick);
+closeBtn.addEventListener("click", handleCloseClick)
+joinOptionBtn.addEventListener("click", handleJoinAnother);
+joinbtn.addEventListener("click", handleJoinClick)
 dialog.addEventListener("click", handleDialogClick);
+stopbox.addEventListener("click", handleDialogClick);
+
 console.log(colorBtns);
 for(let j in colorBtns) {
   if(!Number.isFinite(colorBtns[j]))
@@ -947,16 +992,3 @@ window.addEventListener("resize", resizeCanvas);
 document.addEventListener("keydown", handleKeyDown);
 
 // || ADDING EVENTLISTENERS END
-ws.onmessage = (message)=>{
-  console.log(`message received`, message.data);
-  const obj = JSON.parse(message.data);
-  if(Array.isArray(obj)){
-    shapes = [...obj];
-    deleteRectangle();
-    shapes.map((shape)=> shapeCreator[shape.createShape](shape));
-    localStorage.setItem('shapes', message.data);
-  }
-  else if(obj.idx){
-    idx = obj.idx;
-  }
-}

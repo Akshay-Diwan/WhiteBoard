@@ -149,10 +149,9 @@ input[type="range"] {
     background-color: transparent;
 }
 
-label{
+label, p, input[type="text"]{
     font-family: "Nunito", serif;
-    font-optical-sizing: auto;
-    font-weight: 100;
+    font-weight: 500;
     font-style: normal;
     padding-block: 10px;
  }
@@ -175,6 +174,25 @@ label{
     top: 10px;
     right: 10px;
     display: flex;
+}
+.flex-h{
+    display: flex;
+    width: 100%;
+    justify-content:left;
+    gap: 10px;
+    align-items: center;
+}
+
+.to-bottom{
+    position: absolute;
+    bottom: 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    width: 90%;
+    margin-left: 5%;
 }
 .share, .library{
     padding-inline: 10px;
@@ -225,14 +243,7 @@ button img{
     border: black solid 5px;
 }
 .dialog-box{
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.174);
-    position: fixed;
-    top: 0px;
     border: 0px;
-}
-.collaborate{
     margin-top: 5%;
     margin-inline: auto;
     width: 90%;
@@ -243,7 +254,42 @@ button img{
     background-color: white;
     border-radius: 10px;
     box-shadow: 1px 1px 10px black;
+    
+}
+.dialog-box::backdrop{
+    background: rgba(0, 0, 0, 0.174);
+    
+}
+.collab-link{
+    background-color: #b6b6b473;
+    text-align: left;
+    width: 90%;
+    margin: auto;
+    padding: 0.5em;
+    font-size: 1.25rem;
+    position: relative;
 
+}
+.copy-button{
+    background-color: transparent;
+    border: 0px;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    height: 100%;
+    padding: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0.5;
+    /* height: 2.5rem; */
+}
+.copy-button:hover{
+    background-color: rgba(0, 0, 0, 0.463);
+    cursor: pointer;
+   
 }
 .nunito{
     font-family: "Nunito", serif;
@@ -257,7 +303,7 @@ button img{
     font-style: normal;
   }
 
-.dialog-box-heading{
+.dialog-box-heading,.stop-box-heading{
     
     font-family: "Poppins", serif;
     font-weight: 600;
@@ -265,37 +311,74 @@ button img{
     /* color: #0073cf; */
     font-style: normal;
     font-size: 1.75rem;
-    margin: 10px;
+    
 }
 .dialog-box-text{
     font-size: 0.8rem;
-    
 }
 .startLive{
-    margin-top:30px;
     background-color: #6F42C1;
     color: whitesmoke;
     outline: none;
     border: 0px;
-    padding-inline: 10px;
-    padding-block: 12px;
+    padding-inline: 15px;
+    padding-block: 7px;
     font-size: 1rem;
     border-radius: 7px;
-    margin-inline:auto ;
     display: flex;
-    column-gap: 10px;
+    margin-top: 10px;
     align-items: center;
 }
 .play-button{
     width: 20px;
     display: inline;
+    margin: 0px;
 }
+.stop-box-heading{
+    padding: 0px;
+    margin-inline: 0px;
+    margin-top: 10px;
+    margin-bottom: 30px;
+    color: #0C090A;
+}
+.username-label{
+    width: 90%;
+    text-align: left;
+    margin: auto;
+    font-size: 1.051rem;
+}
+.username-input, .collab-link{
+    background-color: #b6b6b473;
+    width: 90%;
+    padding: 0.5em;
+    font-size: 1rem;
+    outline: none;
+    border: 0px;
+    border-radius: 10px;
+}
+.username-input:hover{
+    cursor:text;
+    outline: none;
+    border: 0px;
+}
+.start-session{
+    text-align: left;
+    padding-left: 5em;
+    padding-top: 2em;
+}
+.startLive:hover{
+    background-color: #4b2d81;
 
-@media screen  and (min-width: 768px){
-    .toolbar{
-    width: 691px;
-    }
-    .collaborate{
+}
+@media screen  and (min-width: 556px){
+    .dialog-box{
         width: 500px;
     }
 }
+@media screen  and (min-width: 1440px){
+    .toolbar{
+    width: 691px;
+    }
+}
+
+
