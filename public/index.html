@@ -11,9 +11,7 @@
         <button id="rectangle"><img src="src/rectangle.webp" alt="rectangle"></button>
         <button id="ellipse"><img src="src/circle.png" alt="rectangle"></button>
         <button id="line"><img src="src/line.png" alt=""></button>
-        <button><img src="src/arrow.png" alt=""></button>
         <button id="draw"><img src="src/draw.png" alt=""></button>
-        <button id="text"><img src="src/text.webp" alt=""></button>
         <button id="eraser"><img src="src/erase.png" alt=""></button>
 
     </nav>
@@ -56,14 +54,42 @@
     <button class="share" id="share">Share</button>
     <button class="library">Library</button>
 </div>
-<dialog  class="dialog-box" id="dialogBox">
-    <div class="start-session collaborate">
+<dialog  class="dialog-box" id="dialogBox" >
     <p class="dialog-box-heading">Live Collaboration</p>
     <p class="poppins-regular dialog-box-text">Invite people to collaborate on your drawing.</p>
-    <button  id = "startLive" class="startLive nunito"><img class="play-button" src="src/playbutton.png" width="50" alt=""><p class="play-button-text"> start session</p></button>
+    <div class="to-center to-bottom">
+    <button  id = "startLive" class="startLive nunito"><p class="play-button-text"> start session</p></button>
+    <button id = "joinAnother" class="startLive nunito"><p class="play-button-text">Join Session</p></button>
 </div>
 </dialog>
-   <script src="/backend/Client/index.js" type="module"></script>
-   <!-- <script type="module" src="objects/rectangle.js"></script> -->
+
+<dialog class = "dialog-box" id="stopBox"> 
+        <p class="stop-box-heading poppins-regular">Start Live Collaboration</p>
+        <p class="username-label" for="username">Name: </p>
+        <input class="username-input" type="text" name="username" id=creator-name" placeholder="Blue Blaze">
+        <br>
+        <p class="username-label">Link:</p>
+        <p class="collab-link" type="text" id="collablink">xyz <button class="copy-button"><img src="./src/copy.png" alt=""></button></p>
+        <div class="to-center to-bottom">
+        <button id = "stopLive" style="margin-top: 30px" class="startLive nunito"><img class="play-button" src="src/stop.png" width="50" alt=""><p class="play-button-text">stop session</p></button>
+        </div>
+</dialog>
+
+<dialog class = "dialog-box" id="inputBox">
+        <p class="stop-box-heading poppins-regular">Paste the Link to Join</p>
+        <p class="username-label" for="username">Name: </p>
+        
+        <input class="username-input" type="text" name="username" id="username" placeholder="Blue Blaze">
+        <br>
+        <p class="username-label" for="linkInput">Link: </p>
+        <input class="username-input" type="text" name="linkInput" id="linkInput" placeholder="paste link here">
+        <div class="to-center to-bottom">
+            <button id = "join" style= "padding: 1px 15px;" class="startLive nunito"><p class="play-button-text">Join</p></button>
+            <button  id = "close" style= "padding: 1px 15px;" class="startLive nunito"><p class="play-button-text">close</p></button>
+        </div>
+</dialog>
+<script src="/socket.io/socket.io.js"></script>
+   <script src="./index.js" type="module"></script> 
+   <!-- <script type="module" src="objects/rectangle.js"></script>
 </body>
 </html>

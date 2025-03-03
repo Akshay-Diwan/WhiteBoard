@@ -1,135 +1,53 @@
-const ws = new WebSocket('ws://localhost:8080');
-ws.onopen = ()=>{
-  console.log('ws opened in browser');
-  ws.send(JSON.stringify({message:'hello World'}));
-}
+import canvas,* as dom from './objects/Dom.js';
+import clearCanvas,{createRectangle, createEllipse, createLine, createArbitary, createTextField} from './objects/rectangle.js';
+import { onEdge, inRange, inShape } from './objects/MousePositions.js';
 
-ws.onclose = function(event) {
-  console.log('WebSocket connection closed:', event);
-  if (event.wasClean) {
-      console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
-  } else {
-      console.log('Connection died');
+let shapes =[];
+let sharing = false;
+if(localStorage.getItem('shapes')) shapes = JSON.parse(localStorage.getItem('shapes'));
+const socket = io();
+socket.on('creating shape', (currentShape)=>{
+  console.log('here we are in recieved messsage', currentShape);
+  clearCanvas();
+  shapes.map(shape=> shapeCreator[shape.createShape](shape));
+  shapeCreator[currentShape.createShape](currentShape);
+})
+socket.on('change in shapes', (message)=>{
+  console.log('here we are in recieved messsage', message);
+  clearCanvas();
+  shapes = [...message];
+  shapes.map(shape=> shapeCreator[shape.createShape](shape));
+})
+socket.on('room id', (room)=>{
+  localStorage.setItem('roomID', room);
+})
+const sendToServer = (identifier, message)=>{
+  if(sharing){
+    console.log("here we are in send To server");
+    console.log("this is the room id: ", localStorage.getItem('roomID'));
+    socket.emit(identifier, message, localStorage.getItem('roomID'));
   }
-};
-// import { createRectangle, deleteRectangle } from "./objects/rectangle.js";
-const canvas = document.getElementById("whiteboard");
+}
+const sendIndex = (index)=>{
+  if(sharing){
+    socket.emit('index', index);
+  }
+}
+// import { createRectangle, clearCanvas } from "./objects/rectangle.js";
 // const circle = document.getElementById("circle");
 
 setTimeout(1000);
 // || CREATING AND DELETING OBJECTS
-const deleteRectangle = () => {
-  if(canvas.getContext){
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-};
+
 const shapeCreator ={
-createRectangle: function(rectangle){
-  if (canvas.getContext) {
-    const ctx = canvas.getContext("2d");
-    ctx.strokeStyle = rectangle.color || '#000000';
-    ctx.lineWidth = rectangle.strokeWidth || 3;
-    ctx.globalAlpha = rectangle.opacity || 1;
-    if(rectangle.background){
-      ctx.fillStyle = rectangle.background;
-    }
-    ctx.beginPath();
-    ctx.strokeRect(
-      rectangle.x,
-      rectangle.y,
-      rectangle.width,
-      rectangle.length
-    );
-    if(rectangle.background){
-      ctx.fillRect(
-        rectangle.x + (rectangle.strokeWidth || 3) - 1,
-        rectangle.y + (rectangle.strokeWidth || 3) - 1,
-        rectangle.width - (rectangle.strokeWidth || 3),
-        rectangle.length - (rectangle.strokeWidth || 3)
-      )
-    }
-   
-    ctx.strokeStyle ='#000000';
-    ctx.lineWidth = 1;
-    ctx.fillStyle = '#0000FF00';
-  }
-},
-
-createEllipse: function(ellipse){
-  if (canvas.getContext) {
-    const ctx = canvas.getContext("2d");
-    // Compute ellipse parameters
-    ctx.strokeStyle = ellipse.color || '#000000';
-    ctx.lineWidth = ellipse.strokeWidth || 3;
-    ctx.globalAlpha = ellipse.opacity || 1;
-
-    if(ellipse.background){
-      ctx.fillStyle = ellipse.background;
-    }
-    const cx = (ellipse.x + (ellipse.x + ellipse.width)) / 2;
-    const cy = (ellipse.y + (ellipse.y + ellipse.length)) / 2;
-    const rx = (ellipse.width) / 2;
-    const ry = (ellipse.length) / 2;
-    // Draw ellipse
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
-    ctx.stroke();
-    ctx.beginPath();
-    if(ellipse.background && ry > 3 && rx > 3){
-      ctx.ellipse(cx, cy, rx - (ellipse.strokeWidth || 3), ry - (ellipse.strokeWidth || 3), 0, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-    ctx.strokeStyle ='#000000';
-    ctx.lineWidth = 1;
-  }
-},
-createLine: function(line){
-  if (canvas.getContext) {
-    const ctx = canvas.getContext("2d");
-    ctx.strokeStyle = line.color || '#000000';
-    ctx.lineWidth = line.strokeWidth || 3;
-    ctx.globalAlpha = line.opacity || 1;
-
-    // Draw line
-    ctx.beginPath();
-    ctx.moveTo(line.x,line.y);
-    ctx.lineTo(line.endX,line.endY);
-    ctx.stroke();
-    ctx.strokeStyle ='#000000';
-    ctx.lineWidth = 1;
-    ctx.fillStyle = '#0000FF00';
-}
-},
-createArbitary: function(shape, multX = 1, multY = 1,moveX = 0, moveY = 0){
-  if(!shape.points){
-    return;
-  }
-  shape.points = JSON.parse(shape.points).map((point) => ({
-    x: point.x * multX + moveX,
-    y: point.y * multY + moveY
-  }));
-
-  if (canvas.getContext) {
-
-    const ctx = canvas.getContext("2d");
-    ctx.strokeStyle = shape.color || '#000000';
-    ctx.lineWidth = shape.strokeWidth || 5;
-    ctx.globalAlpha = shape.opacity || 1;
-    //handwritten
-    ctx.beginPath();
-    ctx.moveTo(shape.points[0].x,shape.points[0].y);
-    for(let j in shape.points){
-      ctx.lineTo(shape.points[j].x , shape.points[j].y);
-    }
-    ctx.stroke();
-    ctx.strokeStyle ='#000000';
-    ctx.lineWidth = 1;
-    shape.points = JSON.stringify(shape.points);
-}
-}
+createRectangle: createRectangle,
+createEllipse: createEllipse,
+createLine: createLine,
+createArbitary: createArbitary,
+createTextField: createTextField
 }
 // || CREATING OBJECTS  CODE END
+
 // || UTILITY FUNCTION
 const findCorners = ()=>{
   let minX = canvas.offsetWidth, minY = canvas.offsetHeight, maxX = 0, maxY = 0;
@@ -179,20 +97,20 @@ const handleColorBtnClick = (background, e) => {
         const hexColor = rgbToHex(r, g, b);
         console.log(`hexColor: ${hexColor}`);
   if (background) {
-    backgroundProperty.value = hexColor;
+    dom.backgroundProperty.value = hexColor;
     currentShape.background = hexColor;
   } else {
-    colorProperty.value = hexColor;
+    dom.colorProperty.value = hexColor;
     currentShape.color = hexColor;
   }
-  deleteRectangle();
+  clearCanvas();
   let otherShapes = shapes.filter(shape => shape.name != currentShape.name);
 
   otherShapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   shapes = [...otherShapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer('change in shapes', shapes);
 
 }
 }
@@ -206,15 +124,14 @@ const moveRect = 3;
 const createLn = 4;
 const draw = 5;
 const erase = 6;
+const text = 7;
 let idx = (+localStorage.getItem('idx')) || 1;
 let permission = false;
 
 // || COMMANDS END
 
 // || SHAPES OBJECT STORAGE
-let shapes =[];
 
-if(localStorage.getItem('shapes')) shapes = JSON.parse(localStorage.getItem('shapes'));
 
 console.log(shapes);
 let currentShape = {
@@ -236,32 +153,6 @@ let fixedCorner = {
 
 // || SHAPES OBJECT ENDS
 
-// || DEFINING BUTTONS
-
-const rectBtn = document.getElementById("rectangle");
-const ellipseBtn = document.getElementById("ellipse");
-const lineBtn = document.getElementById("line");
-const drawBtn = document.getElementById("draw");
-const textBoxBtn = document.getElementById("text");
-const eraser = document.getElementById('eraser');
-const propertiesCard = document.getElementById("properties");
-const colorProperty = document.getElementById("stroke");
-const strokeWidthProperty = document.getElementById("strokeWidth");
-const backgroundProperty = document.getElementById("fill");
-const opacityProperty = document.getElementById("opacity");
-const ShapeList = document.getElementById("trial");
-const colorBtns = document.getElementsByClassName("color-btn");
-const backgroundColorBtns = document.getElementsByClassName("background-color-btn");
-const shareBtn = document.getElementById("share");
-const dialog = document.getElementById("dialogBox");
-const startLive = document.getElementById("startLive");
-let currentFunction = {
-  // createfunction: null,
-  deletefunction: null,
-};
-
-// || DEFINING BUTTONS END
-
 // || BUTTON FUNCTIONS 
 const rectangleSelected = () => {
   if(currentShape){
@@ -274,20 +165,13 @@ const rectangleSelected = () => {
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   }
-  
-  currentFunction = {
-    // createfunction: createRectangle,
-    deletefunction: deleteRectangle,
-  };
   currentShape = {
     name : `shape${idx}`,
     createShape: 'createRectangle'
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
-  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
-
-  console.log("idx: " + idx);
+  sendIndex(idx);
   command = createRect;
   canvas.style.cursor = "crosshair";
 };
@@ -302,17 +186,13 @@ const ellipseSelected = () =>{
   shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
 }
-  currentFunction = {
-    // createfunction: createRectangle,
-    deletefunction: deleteRectangle,
-  };
   currentShape = {
     name : `shape${idx}`,
     createShape: 'createEllipse'
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
-  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
+  sendIndex(idx);
 
   command = createRect;
   canvas.style.cursor = "crosshair";
@@ -328,17 +208,14 @@ const lineSelected = () =>{
   shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
 }
-  currentFunction = {
-    // createfunction: 'createRectangle',
-    deletefunction: deleteRectangle,
-  };
   currentShape = {
     name : `shape${idx}`,
     createShape: 'createLine'
   }
   idx= idx + 1;
   localStorage.setItem('idx', idx);
-  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
+  sendIndex(idx);
+  
 
   command = createLn;
   canvas.style.cursor = "crosshair";
@@ -361,24 +238,9 @@ const drawSelected =()=>{
   }
   idx = idx + 1;
   localStorage.setItem('idx', idx);
-  ws.send(JSON.stringify({idx: localStorage.getItem('idx')}));
-
-
+  sendIndex(idx);
   command = draw;
-  // currentFunction.createfunction = 'createArbitary';
   canvas.style.cursor = " url('src/draw.png') 32 32 , auto";
-}
-const textSelected = ()=>{
-  if(currentShape){
-    deleteDashedBorder(
-      currentShape.x,
-      currentShape.y,
-      currentShape.width,
-      currentShape.length
-    );
-    shapes.map(shape => shapeCreator[shape.createShape](shape));
-  if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
-}
 }
 const eraserSelected = ()=>{
   if(currentShape){
@@ -396,145 +258,56 @@ const eraserSelected = ()=>{
 }
 }
 const handleShareClick = ()=>{
-  dialog.showModal();
+  dom.dialog.showModal();
 }
-const handleDialogClick = ()=>{
-  dialog.close();
+const handleDialogClick =(e)=>{
+  try{
+    e.target.close();
+  }catch(err){
+
+  }
+  
+}
+// let room = 1;
+const handleStartLiveClick = (e)=>{
+  e.preventDefault();
+  dom.dialog.close();
+  dom.stopbox.showModal();
+  dom.collabLink.innerText = socket.id;
+  sharing = true;
+  localStorage.setItem('roomID', socket.id);
+  socket.emit('join',localStorage.getItem('roomID'));
+  
+  
+}
+const handleStopLiveClick = (e)=>{
+  e.preventDefault();
+  socket.emit('leave', localStorage.getItem('roomID'));
+  localStorage.removeItem('roomID');
+  sharing = false;
+  dom.stopbox.close();
+}
+const handleCloseClick = (e)=>{
+  e.preventDefault();
+  dom.inputBox.close();
+}
+const handleJoinAnother= (e)=>{
+  e.preventDefault();
+  dom.dialog.close();
+  dom.inputBox.showModal();
+}
+const handleJoinClick = (e)=>{
+  e.preventDefault();
+  localStorage.setItem('roomID',dom.linkInput.value);
+  console.log("Join button is clicked", localStorage.getItem('roomID'));
+  socket.emit('join', localStorage.getItem('roomID'));
+  sharing = true;
+  dom.inputBox.close();
 }
 // || BUTTON FUNCTION ENDS
 
 // CHECKING POINTER POSITION
-const onEdge = (rectangle, x, y) => { // Check if the pointer is near the left or right edge
-  const buffer = 10;      
-  const nearLeftEdge =
-    Math.abs(x - rectangle.x) <= buffer &&
-    y >= rectangle.y &&
-    y <= rectangle.y + rectangle.length;
-  const nearRightEdge =
-    Math.abs(x - (rectangle.x + rectangle.width)) <= buffer &&
-    y >= rectangle.y &&
-    y <= rectangle.y + rectangle.length;
 
-  // Check if the pointer is near the top or bottom edge
-  const nearTopEdge =
-    Math.abs(y - rectangle.y) <= buffer &&
-    x >= rectangle.x &&
-    x <= rectangle.x + rectangle.width;
-  const nearBottomEdge =
-    Math.abs(y - (rectangle.y + rectangle.length)) <= buffer &&
-    x >= rectangle.x &&
-    x <= rectangle.x + rectangle.width;
-
-  if (nearLeftEdge || nearRightEdge || nearTopEdge || nearBottomEdge) {
-    // console.log("rect coordinates: " + rectangle.x + ", " + rectangle.y);
-    // console.log(
-    //   "rect coordinates: " +
-    //     (rectangle.x + rectangle.width) +
-    //     ", " +
-    //     rectangle.y
-    // );
-    // console.log(
-    //   "rect coordinates: " +
-    //     rectangle.x +
-    //     ", " +
-    //     (rectangle.y + rectangle.length)
-    // );
-    // console.log(
-    //   "rect coordinates: " +
-    //     (rectangle.x + rectangle.width) +
-    //     ", " +
-    //     (rectangle.y + rectangle.length)
-    // );
-
-    // console.log("pointer coordinates: " + x + ", " + y);
-
-    command = moveRect;
-    canvas.style.cursor = "move";
-
-    return true;
-  }
-  return false;
-};
-const inRange = (rectangle, e) => {
-  //Anticlockwise
-  const corner1 = Math.sqrt(
-    Math.pow(rectangle.x - e.offsetX, 2) + Math.pow(rectangle.y - e.offsetY, 2)
-  );
-  const corner2 = Math.sqrt(
-    Math.pow(rectangle.x - e.offsetX, 2) +
-      Math.pow(rectangle.y + rectangle.length - e.offsetY, 2)
-  );
-  const corner3 = Math.sqrt(
-    Math.pow(rectangle.x + rectangle.width - e.offsetX, 2) +
-      Math.pow(rectangle.y + rectangle.length - e.offsetY, 2)
-  );
-  const corner4 = Math.sqrt(
-    Math.pow(rectangle.x + rectangle.width - e.offsetX, 2) +
-      Math.pow(rectangle.y - e.offsetY, 2)
-  );
-  if (corner1 < 20) {
-    fixedCorner.y = rectangle.y + rectangle.length;
-    fixedCorner.x = rectangle.x + rectangle.width;
-    return true;
-  }
-  if (corner2 < 20) {
-    fixedCorner.x = rectangle.x + rectangle.width;
-    fixedCorner.y = rectangle.y;
-    return true;
-  }
-  if (corner3 < 20) {
-    fixedCorner.x = rectangle.x;
-    fixedCorner.y = rectangle.y;
-    return true;
-  }
-  if (corner4 < 20) {
-    fixedCorner.x = rectangle.x;
-    fixedCorner.y = rectangle.y + rectangle.length;
-    return true;
-  }
-};
-const inShape = (shape, e)=>{
-  console.log("inside inShape function...");
-  if(shape.createShape === 'createRectangle'){
-    if(e.offsetX > shape.x && e.offsetX < shape.width + shape.x && e.offsetY > shape.y && e.offsetY < shape.y + shape.length){
-      console.log('inside rectangle');
-      return true;
-    }
-  }
-  if(shape.createShape === 'createEllipse'){
-    const cx = (shape.x + (shape.x + shape.width)) / 2;
-    const cy = (shape.y + (shape.y + shape.length)) / 2;
-    const rx = (shape.width) / 2;
-    const ry = (shape.length) / 2;
-    if(Math.pow((e.offsetX - cx)/rx, 2) + Math.pow((e.offsetY - cy)/ry, 2) <= 1){
-      console.log('inside ellipse');
-      return true;
-    }
-  }
-  if(shape.createShape === 'createArbitary'){
-    console.log("inside arbitary...");
-    console.log(`x: ${JSON.parse(shape.points)[0].x},y: ${JSON.parse(shape.points)[0].y}`);
-    const idx = JSON.parse(shape.points).map((point)=> filterfunction(point, e)).indexOf(true);
-    console.log("idx: "+ idx);
-    if(idx != -1){
-      return true;
-    }
-  }
-  if(shape.createShape === 'createLine'){
-    console.log("first slope: "+(shape.y - e.offsetY)/(shape.x - e.offsetX) + " second slope: "+(shape.y - shape.endY)/(shape.x - shape.endX) );
-    if(e.offsetX > shape.x && e.offsetX < shape.endX && e.offsetY > shape.y && e.offsetY < shape.endY){
-      console.log('inside line');
-      return true;
-    }
-  }
-  
-}
-//trial
-const filterfunction = (point, e)=>{
-  console.log("pointer x: "+ e.offsetX + " pointer y: " + e.offsetY);
-  // console.log(`x: ${point.x}, y: ${point.y}`);
-  return point.x - 10 < e.offsetX && point.x + 10 > e.offsetX &&  point.y - 10 < e.offsetY && point.y + 10 > e.offsetY;
-}
 // || CHECKING POINTER POSITION END
 
 // || FOCUSED OBJECT
@@ -611,7 +384,7 @@ const handleMouseDown = (e) => {
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
 
-    const editingRectindex = shapes.map((rectangle) => inRange(rectangle, e)).indexOf(true);
+    const editingRectindex = shapes.map((rectangle) => inRange(rectangle, e, fixedCorner)).indexOf(true);
   if (
     editingRectindex != -1 &&
     shapes[editingRectindex].name === currentShape.name
@@ -621,8 +394,6 @@ const handleMouseDown = (e) => {
       (rectangle) => rectangle.name !== currentShape.name
     );
     shapes = [...otherShapes];
-    // currentFunction.createfunction = createRectangle;
-    currentFunction.deletefunction = deleteRectangle;
     permission = true;
     return;
   }
@@ -645,8 +416,6 @@ const handleMouseDown = (e) => {
      shapes = [...otherRect];
      initialPoint.x = e.offsetX;
      initialPoint.y = e.offsetY;
-    //  currentFunction.createfunction = createRectangle;
-     currentFunction.deletefunction = deleteRectangle;
      permission = true;
 }
        // || MOVE RECTANGLE CODE ENDS
@@ -660,16 +429,13 @@ const handleMouseMove = (e) => {
   }
   if(command === erase){
     shapes = shapes.filter(shape => !inShape(shape, e));
-    deleteRectangle();
+    clearCanvas();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
-    ws.send(localStorage.getItem('shapes'));
-
-  // if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
-    return;
+    sendToServer('change in shapes',shapes);
   }
-  if(command === draw){
-      deleteRectangle();
+  else if(command === draw){
+      clearCanvas();
       currentShape.points = JSON.stringify([...JSON.parse(currentShape.points), {
         x: e.offsetX,
         y: e.offsetY
@@ -677,23 +443,20 @@ const handleMouseMove = (e) => {
       shapes.map(shape => shapeCreator[shape.createShape](shape));
       if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
       localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
-
-      return;
+      sendToServer('creating shape',currentShape);
     }
-  
-  if(command === createLn){
-    currentFunction.deletefunction();
+  else if(command === createLn){
+    clearCanvas();   
     currentShape.endX = e.offsetX;
     currentShape.endY = e.offsetY;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
-    return;
+    sendToServer('creating shape',currentShape);
+
   }
-  if (command === moveRect) {
-    currentFunction.deletefunction();
+  else if(command === moveRect) {
+    clearCanvas();
     let moveX = e.offsetX - initialPoint.x;
     let moveY = e.offsetY - initialPoint.y;
     currentShape.x = currentShape.x + e.offsetX - initialPoint.x;
@@ -702,17 +465,18 @@ const handleMouseMove = (e) => {
     initialPoint.y = e.offsetY;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
 
-    if(currentShape.points){
+  if(currentShape.points){
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape, 1, 1, moveX, moveY);
-    // currentShape.createShape(currentShape,1,1,moveX, moveY);
     return;
     }
     shapeCreator[currentShape.createShape](currentShape);
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
+    sendToServer('change in shapes',shapes);
+    sendToServer('creating shape',currentShape);
+
   }
-  if (command === editRect) {
-    deleteRectangle();
+  else if (command === editRect) {
+    clearCanvas();
     if (fixedCorner.x > currentShape.x) {
       currentShape.x = e.offsetX;
     }
@@ -723,21 +487,21 @@ const handleMouseMove = (e) => {
     let changeY = (Math.abs(fixedCorner.y - e.offsetY) - currentShape.length)/currentShape.length;
     currentShape.width = Math.abs(fixedCorner.x - e.offsetX);
     currentShape.length = Math.abs(fixedCorner.y - e.offsetY);
-
-    // currentFunction.createfunction();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
-    // console.log("create Shape for currentShape is : "+ currentShape.createShape);
-    if(currentShape.points){
-    shapeCreator[currentShape.createShape](currentShape, 1 + changeX, 1 + changeY);
-    return;
-    }
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
-    shapeCreator[currentShape.createShape](currentShape);
-    return;
+    if(currentShape.points){
+      shapeCreator[currentShape.createShape](currentShape, 1 + changeX, 1 + changeY);
+    }
+    else{
+      shapeCreator[currentShape.createShape](currentShape);
+    }
+      sendToServer('change in shapes', shapes);
+      sendToServer('creating shape',currentShape);
+    
+   
   }
-  if (command === createRect) {
-    deleteRectangle();
+  else if (command === createRect) {
+    clearCanvas();
     if (e.offsetX < fixedCorner.x) {
       currentShape.x = e.offsetX;
     }
@@ -747,21 +511,20 @@ const handleMouseMove = (e) => {
     canvas.style.cursor = "auto";
     currentShape.length = Math.abs(fixedCorner.y - e.offsetY);
     currentShape.width = Math.abs(fixedCorner.x - e.offsetX);
+    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
-    localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
-      ws.send(localStorage.getItem('shapes'));
-    return;
+    sendToServer('creating shape',currentShape);
+
 };
 }
-
 const handleMouseUp = () => {
   permission = false;
   if(command === null){
-    propertiesCard.style.visibility = "hidden";
+    dom.propertiesCard.style.visibility = "hidden";
   }
   else{
-    propertiesCard.style.visibility = "visible";
+    dom.propertiesCard.style.visibility = "visible";
 
   }
   if(command === draw){
@@ -793,65 +556,90 @@ const handleMouseUp = () => {
   for(let j in shapes){
     console.log(shapes[j]);
   }
-  
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
-
-  // currentFunction.createfunction = null;
-  currentFunction.deletefunction = null;
+  sendToServer('change in shapes',shapes);
   canvas.style.cursor = "auto";
-  // ShapeList.innerHTML = '';
-  for(let j in shapes){
-    // ShapeList.innerHTML += `<li>${shapes[i].name}</li>`;
-    console.log(shapes[j]);
-  }
 };
+
+const handledblclick = (e)=>{
+  if(currentShape){
+    deleteDashedBorder(
+      currentShape.x,
+      currentShape.y,
+      currentShape.width,
+      currentShape.length
+    );
+    shapes.map(shape => shapeCreator[shape.createShape](shape));
+    if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
+  }
+    currentShape = {
+    name : `shape${idx}`,
+    createShape: 'createTextField',
+    text: 'trial text'
+  }
+  idx = idx + 1;
+  localStorage.setItem('idx', idx);
+  sendIndex(idx);
+  currentShape.x = e.offsetX;
+  currentShape.y = e.offsetY;
+  createTextField(currentShape);
+  console.log("currentShape.height = " + currentShape.height);
+  dashedBorder(currentShape.x - 30, currentShape.y - 30, currentShape.width + 30, currentShape.length + 30);
+  shapes = [...shapes, currentShape];
+  localStorage.setItem('shapes', JSON.stringify(shapes));
+  sendToServer('change in shapes', shapes);
+  // dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.height * 16);
+}
+
 // || MOUSE EVENTS END
 
 // || HANDLING KEY EVENTS
 const handleKeyDown = (e)=>{
+  
   if(e.key === "Delete"){
     let otherShapes = shapes.filter(shape => shape.name != currentShape.name);
     localStorage.setItem('shapes', JSON.stringify(shapes));
-    ws.send(localStorage.getItem('shapes'));
     shapes = otherShapes;
   console.log("Deleted object: "+ currentShape.name);
-    // permission = false;
-  //   for (let key in currentShape) {
-  //     if (currentShape.hasOwnProperty(key)) {
-  //         currentShape[key] = null;
-  //     }
-  // }
   currentShape = null;
-    deleteRectangle();
+    clearCanvas();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
-    ws.send(localStorage.getItem('shapes'));
-
-  ShapeList.innerHTML = '';
-    for(let j in shapes){
-      ShapeList.innerHTML += `<li>${shapes[j].name}</li>`;
-      console.log(shapes[j]);
-    }
+    sendToServer('change in shapes',shapes);
   }
+  else if(e.key.length === 1){
+    console.log("inside typing");
+    currentShape.text = currentShape.text + e.key;
+    clearCanvas();
+    const othershapes = shapes.filter(shape => shape.name != currentShape.name);
+    shapes = [...othershapes, currentShape];
+    shapes.map(shape => shapeCreator[shape.createShape](shape));
+    localStorage.setItem('shapes', JSON.stringify(shapes));
+    sendToServer('change in shapes',shapes);
+  }
+  else if(e.key === "Backspace" && currentShape.createShape === 'createTextField'){
+    currentShape.text = currentShape.text.substring(0, currentShape.text.length - 1);
+    clearCanvas();
+    const othershapes = shapes.filter(shape => shape.name != currentShape.name);
+    shapes = [...othershapes, currentShape];
+    shapes.map(shape => shapeCreator[shape.createShape](shape));
+    localStorage.setItem('shapes', JSON.stringify(shapes));
+    sendToServer('change in shapes',shapes);
+  }
+  
 }
 // || HANDLING KEY EVENTS END
 // || HANDLE PROPERTY EVENTS        //THESE ARE ALL GOOD TO GO
 const handleColorChange=(e)=>{
   console.log(e.target.value);
   currentShape.color = e.target.value;
-  // console.log("current Shape color: "+ currentShape.color);
-  deleteRectangle();
+  clearCanvas();
   shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
-  // console.log(currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
-
-  // console.log("shapes created");
-
+  sendToServer('change in shapes',shapes);
 }
 const handleStrokeWidthChange=(e)=>{
   switch(e.target.value){
@@ -866,51 +654,45 @@ const handleStrokeWidthChange=(e)=>{
     break;
 
   }
-  // console.log("Width: " + currentShape.strokeWidth);
-  deleteRectangle();
+  clearCanvas();
   shapes.map(shape => shapeCreator[shape.createShape](shape));
-  // console.log(currentShape.createShape);
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
-  othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
+  const othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer('change in shapes',shapes);
 
 
 }
 const handleBackgroundChange = (e)=>{
   console.log(e.target.value);
   currentShape.background = e.target.value;
-  // console.log("current Shape color: "+ currentShape.background);
-  deleteRectangle();
+  clearCanvas();
   shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
-
-
+  sendToServer('change in shapes',shapes);
 }
 const handleOpacityChange = (e)=>{
   console.log(e.target.value);
   currentShape.opacity = e.target.value/10;
-  // console.log("current Shape opacity: " + currentShape.opacity);
-  deleteRectangle();
+  clearCanvas();
   shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  ws.send(localStorage.getItem('shapes'));
+  sendToServer('change in shapes',shapes);
 
 }
+
 
 // // Resize canvas to match the viewport size
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight * 0.95;
-  
     shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape && currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
 }
@@ -922,41 +704,36 @@ resizeCanvas();
 canvas.addEventListener("mousedown", handleMouseDown);
 canvas.addEventListener("mousemove", handleMouseMove);
 canvas.addEventListener("mouseup", handleMouseUp);
-rectBtn.addEventListener("click", rectangleSelected);
-ellipseBtn.addEventListener("click", ellipseSelected);
-lineBtn.addEventListener("click", lineSelected);
-drawBtn.addEventListener("click", drawSelected);
-eraser.addEventListener('click', eraserSelected);
-colorProperty.addEventListener("change", handleColorChange);
-strokeWidthProperty.addEventListener("change", handleStrokeWidthChange);
-backgroundProperty.addEventListener("change", handleBackgroundChange);
-opacityProperty.addEventListener("change", handleOpacityChange);
-shareBtn.addEventListener("click", handleShareClick);
-dialog.addEventListener("click", handleDialogClick);
-console.log(colorBtns);
-for(let j in colorBtns) {
-  if(!Number.isFinite(colorBtns[j]))
-  colorBtns[j].onclick = (e) =>handleColorBtnClick(false, e);
+canvas.addEventListener("dblclick", handledblclick)
+dom.rectBtn.addEventListener("click", rectangleSelected);
+dom.ellipseBtn.addEventListener("click", ellipseSelected);
+dom.lineBtn.addEventListener("click", lineSelected);
+dom.drawBtn.addEventListener("click", drawSelected);
+dom.eraser.addEventListener('click', eraserSelected);
+dom.colorProperty.addEventListener("change", handleColorChange);
+dom.strokeWidthProperty.addEventListener("change", handleStrokeWidthChange);
+dom.backgroundProperty.addEventListener("change", handleBackgroundChange);
+dom.opacityProperty.addEventListener("change", handleOpacityChange);
+dom.shareBtn.addEventListener("click", handleShareClick);
+dom.startLive.addEventListener("click", handleStartLiveClick);
+dom.stopLive.addEventListener("click", handleStopLiveClick);
+dom.closeBtn.addEventListener("click", handleCloseClick)
+dom.joinOptionBtn.addEventListener("click", handleJoinAnother);
+dom.joinbtn.addEventListener("click", handleJoinClick)
+dom.dialog.addEventListener("click", handleDialogClick);
+dom.stopbox.addEventListener("click", handleDialogClick);
+
+console.log(dom.colorBtns);
+for(let j in dom.colorBtns) {
+  if(!Number.isFinite(dom.colorBtns[j]))
+  dom.colorBtns[j].onclick = (e) =>handleColorBtnClick(false, e);
 }
-for(let j in colorBtns){
-  if(!Number.isFinite(backgroundColorBtns[j]))
-   backgroundColorBtns[j].onclick = (e) => handleColorBtnClick(true, e);
+for(let j in dom.colorBtns){
+  if(!Number.isFinite(dom.backgroundColorBtns[j]))
+   dom.backgroundColorBtns[j].onclick = (e) => handleColorBtnClick(true, e);
   }
 
 window.addEventListener("resize", resizeCanvas);
 document.addEventListener("keydown", handleKeyDown);
 
 // || ADDING EVENTLISTENERS END
-ws.onmessage = (message)=>{
-  console.log(`message received`, message.data);
-  const obj = JSON.parse(message.data);
-  if(Array.isArray(obj)){
-    shapes = [...obj];
-    deleteRectangle();
-    shapes.map((shape)=> shapeCreator[shape.createShape](shape));
-    localStorage.setItem('shapes', message.data);
-  }
-  else if(obj.idx){
-    idx = obj.idx;
-  }
-}
