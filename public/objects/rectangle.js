@@ -1,10 +1,26 @@
 import canvas from './Dom.js'
+export function dashedBorder(x, y, width, length){
+  if (canvas.getContext) {
+    const ctx = canvas.getContext("2d");
+    ctx.setLineDash([4, 2]);
+    ctx.lineDashOffSet = 5;
+    ctx.strokeRect(x - 10, y - 10, width + 20, length + 20);
+    // ctx.beginPath();
+    ctx.setLineDash([1, 0]);
+    ctx.strokeRect(x - 10 - 7, y - 10 - 7, 7, 7);
+    ctx.strokeRect(x - 10 + width + 20, y - 10 - 7, 7, 7);
+    ctx.strokeRect(x - 10 + width + 20, y - 10 + length + 20, 7, 7);
+    ctx.strokeRect(x - 10 - 7, y - 10 + length + 20, 7, 7);
+    ctx.setLineDash([1, 0]);
+  }
+}
 export function createRectangle(rectangle){
   if (canvas.getContext) {
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = rectangle.color || '#000000';
     ctx.lineWidth = rectangle.strokeWidth || 3;
-    ctx.globalAlpha = rectangle.opacity || 1;
+    
+    ctx.globalAlpha = rectangle.opacity  || 1;
     if(rectangle.background){
       ctx.fillStyle = rectangle.background;
     }
@@ -112,15 +128,16 @@ export function createRectangle(rectangle){
     
 
       // ctx.fillText(shape.text, shape.x, shape.y);
-      ctx.font = "30px Arial"; // Set the font
-      ctx.fillStyle = "black";
+      ctx.font = shape.font; // Set the font
+      ctx.fillStyle = shape.color || "black";
       ctx.textBaseline = "hanging";
       ctx.fillText(shape.text, shape.x, shape.y);
       const text = ctx.measureText(shape.text);
-      shape.height = 16;
+      console.log("width of text : " + text.width);
       shape.width = text.width;
       console.log(shape.height);
       console.log(shape.width);
+
     }
   }
   export default function clearCanvas(){
