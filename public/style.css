@@ -56,45 +56,7 @@ canvas{
     column-gap: 1.5rem;
 }
 /* Style the range input itself */
-input[type="range"] {
-    -webkit-appearance: none;  /* Remove default appearance in Webkit browsers (Chrome, Safari) */
-    -moz-appearance: none;     /* Remove default appearance in Firefox */
-    appearance: none;          /* Standard way to remove default appearance */
-    width: 100%;               /* Full width */
-    height: 8px;               /* Track height */
-    background: linear-gradient(to right, #6B9797 0%, #6B9797 50%, #ddd 50%, #ddd 100%); /* Gradient with two colors */
-    border-radius: 5px;        /* Rounded corners */
-    outline: none;             /* Remove outline when focused */
-    position: relative;        /* Position relative for track positioning */
-  }
-  
-  /* Style the thumb (the draggable part of the slider) */
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;  /* Remove default thumb appearance */
-    appearance: none;
-    width: 20px;               /* Thumb width */
-    height: 20px;              /* Thumb height */
-    border-radius: 50%;        /* Circular thumb */
-    background: #6B9797;       /* Thumb color */
-    cursor: pointer;          /* Change cursor to pointer on hover */
-    margin-top: -6px;          /* Adjust the thumb position to center it vertically */
-  }
-  
-  /* Firefox styling for thumb */
-  input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #6B9797;       /* Thumb color */
-    cursor: pointer;
-    margin-top: -6px;          /* Adjust the thumb position to center it vertically */
-  }
-  
-  /* Optional: Add focus styling to input */
-  input[type="range"]:focus {
-    outline: none;             /* Remove outline */
-    border: 2px solid #6B9797; /* Optional: Add border when focused with the same color */
-  }
+
   
   
 .color-btn,.background-color-btn{

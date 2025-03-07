@@ -1,6 +1,11 @@
 import canvas,* as dom from './objects/Dom.js';
 import clearCanvas,{createRectangle, createEllipse, createLine, createArbitary, createTextField} from './objects/rectangle.js';
-import { onEdge, inRange, inShape } from './objects/MousePositions.js';
+import { onEdge, inRange, inShape} from './objects/MousePositions.js';
+import { dashedBorder } from './objects/rectangle.js';
+let canvasDimensions = {
+  width: window.innerWidth,
+  height: localStorage.getItem('canvas height') || window.innerHeight * 0.95
+}
 
 let shapes =[];
 let sharing = false;
@@ -20,6 +25,11 @@ socket.on('change in shapes', (message)=>{
 })
 socket.on('room id', (room)=>{
   localStorage.setItem('roomID', room);
+})
+socket.on('canvas dimensions', (dimensions)=>{
+  canvasDimensions = {...dimensions};
+  localStorage.setItem('canvas height', canvasDimensions.height);
+  resizeCanvas();
 })
 const sendToServer = (identifier, message)=>{
   if(sharing){
@@ -111,7 +121,6 @@ const handleColorBtnClick = (background, e) => {
   shapes = [...otherShapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
   sendToServer('change in shapes', shapes);
-
 }
 }
 };
@@ -311,22 +320,7 @@ const handleJoinClick = (e)=>{
 // || CHECKING POINTER POSITION END
 
 // || FOCUSED OBJECT
-const dashedBorder = (x, y, width, length) => {
-  if (canvas.getContext) {
-    const ctx = canvas.getContext("2d");
-    ctx.setLineDash([4, 2]);
-    ctx.lineDashOffSet = 5;
-    ctx.strokeRect(x - 10, y - 10, width + 20, length + 20);
-    // ctx.beginPath();
-    ctx.setLineDash([1, 0]);
-    ctx.strokeRect(x - 10 - 7, y - 10 - 7, 7, 7);
-    ctx.strokeRect(x - 10 + width + 20, y - 10 - 7, 7, 7);
-    ctx.strokeRect(x - 10 + width + 20, y - 10 + length + 20, 7, 7);
-    ctx.strokeRect(x - 10 - 7, y - 10 + length + 20, 7, 7);
 
-    ctx.setLineDash([1, 0]);
-  }
-};
 const deleteDashedBorder = (x, y, width, length) => {
   if (canvas.getContext) {
     const ctx = canvas.getContext("2d");
@@ -425,6 +419,18 @@ return;
 // ||  MOUSE MOVE 
 const handleMouseMove = (e) => {
   if (!permission) {
+    if(currentShape && shapes.map((rectangle) =>inRange(rectangle, e, fixedCorner)).indexOf(true) !== -1){
+      return;
+    }
+    let i = shapes
+  .map((rectangle) => onEdge(rectangle, e.offsetX, e.offsetY))
+  .indexOf(true);
+  if(i !== -1){
+    canvas.style.cursor = 'move';
+  }
+  else{
+    canvas.style.cursor = 'auto';
+  }
     return;
   }
   if(command === erase){
@@ -487,6 +493,9 @@ const handleMouseMove = (e) => {
     let changeY = (Math.abs(fixedCorner.y - e.offsetY) - currentShape.length)/currentShape.length;
     currentShape.width = Math.abs(fixedCorner.x - e.offsetX);
     currentShape.length = Math.abs(fixedCorner.y - e.offsetY);
+    if(currentShape.createShape === 'createTextField'){
+      currentShape.font = `${currentShape.length}px "Indie Flower", cursive`;
+    }
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
     if(currentShape.points){
@@ -557,7 +566,14 @@ const handleMouseUp = () => {
     console.log(shapes[j]);
   }
   localStorage.setItem('shapes', JSON.stringify(shapes));
+  if(currentShape.y + currentShape.length >= canvasDimensions.height - window.innerHeight){
+    canvasDimensions.height += window.innerHeight;
+    resizeCanvas();
+    sendToServer('canvas dimensions', canvasDimensions);
+  }
+  localStorage.setItem('canvas height', canvasDimensions.height);
   sendToServer('change in shapes',shapes);
+
   canvas.style.cursor = "auto";
 };
 
@@ -575,7 +591,10 @@ const handledblclick = (e)=>{
     currentShape = {
     name : `shape${idx}`,
     createShape: 'createTextField',
-    text: 'trial text'
+    text: 'trial text',
+    font: '30px "Indie Flower", cursive',
+    length: 30
+    
   }
   idx = idx + 1;
   localStorage.setItem('idx', idx);
@@ -588,14 +607,28 @@ const handledblclick = (e)=>{
   shapes = [...shapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
   sendToServer('change in shapes', shapes);
-  // dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.height * 16);
+  
 }
-
 // || MOUSE EVENTS END
-
+// || TOUCH EVENTS START
+const handleTouch = (e, callback)=>{
+  if(e.pointerType === 'pen'){
+    console.log("pencil detected");
+    let touch = e.touches[0];
+    let coordinates = { 
+      offsetX: touch.clientX - canvas.getBoundingClientRect().left,
+      offsetY: touch.clientY - canvas.getBoundingClientRect().top
+    }
+    callback(coordinates);
+  }
+  else{
+    console.log("pencil not detected");
+  }
+}
 // || HANDLING KEY EVENTS
 const handleKeyDown = (e)=>{
-  
+ 
+
   if(e.key === "Delete"){
     let otherShapes = shapes.filter(shape => shape.name != currentShape.name);
     localStorage.setItem('shapes', JSON.stringify(shapes));
@@ -616,6 +649,7 @@ const handleKeyDown = (e)=>{
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
     sendToServer('change in shapes',shapes);
+    dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.length);
   }
   else if(e.key === "Backspace" && currentShape.createShape === 'createTextField'){
     currentShape.text = currentShape.text.substring(0, currentShape.text.length - 1);
@@ -625,7 +659,13 @@ const handleKeyDown = (e)=>{
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
     sendToServer('change in shapes',shapes);
+    dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.length);
+
   }
+  if(e.keyCode === 32 && currentShape.createShape === 'createTextField'){
+    e.preventDefault();
+  }
+ 
   
 }
 // || HANDLING KEY EVENTS END
@@ -684,15 +724,15 @@ const handleOpacityChange = (e)=>{
   othershapes = shapes.filter((shape)=> shape.name != currentShape.name);
   shapes = [...othershapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
-  sendToServer('change in shapes',shapes);
+  sendToServer('change in shapes',shapes);   
 
 }
 
 
 // // Resize canvas to match the viewport size
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight * 0.95;
+  canvas.width = canvasDimensions.width;
+  canvas.height = canvasDimensions.height;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape && currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
 }
@@ -704,7 +744,10 @@ resizeCanvas();
 canvas.addEventListener("mousedown", handleMouseDown);
 canvas.addEventListener("mousemove", handleMouseMove);
 canvas.addEventListener("mouseup", handleMouseUp);
-canvas.addEventListener("dblclick", handledblclick)
+canvas.addEventListener("dblclick", handledblclick);
+canvas.addEventListener("touchstart",(e)=> handleTouch(e, handleMouseDown));
+canvas.addEventListener("touchmove", (e) => handleTouch(e, handleMouseMove));
+canvas.addEventListener("touchend", handleMouseUp);
 dom.rectBtn.addEventListener("click", rectangleSelected);
 dom.ellipseBtn.addEventListener("click", ellipseSelected);
 dom.lineBtn.addEventListener("click", lineSelected);

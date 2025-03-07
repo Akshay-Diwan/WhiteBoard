@@ -21,7 +21,6 @@ io.on('connect', (socket)=>{
     });
     socket.on('change in shapes', (message, room)=>{
         if(room){
-            console.log('joined a room');
             io.to(room).emit('change in shapes', message);
         }
     })
@@ -31,6 +30,11 @@ io.on('connect', (socket)=>{
     })
     socket.on('leave', (room)=>{
         socket.leave(room);
+    })
+    socket.on('canvas dimensions',(dimensions, room)=>{
+        if(room){
+           io.to(room).emit('canvas dimensions', dimensions);
+        }
     })
 })
 app.get('/',(req, res)=>{

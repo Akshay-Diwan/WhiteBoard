@@ -1,6 +1,6 @@
 import canvas from "./Dom.js";
 export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the left or right edge
-    const buffer = 10;      
+    const buffer = 20;      
     const nearLeftEdge =
       Math.abs(x - rectangle.x) <= buffer &&
       y >= rectangle.y &&
@@ -46,27 +46,34 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
     if (corner1 < 20) {
       fixedCorner.y = rectangle.y + rectangle.length;
       fixedCorner.x = rectangle.x + rectangle.width;
+      canvas.style.cursor = 'nw-resize';
       return true;
     }
     if (corner2 < 20) {
       fixedCorner.x = rectangle.x + rectangle.width;
       fixedCorner.y = rectangle.y;
+      canvas.style.cursor = 'sw-resize';
+
       return true;
     }
     if (corner3 < 20) {
       fixedCorner.x = rectangle.x;
       fixedCorner.y = rectangle.y;
+      canvas.style.cursor = 'se-resize';
+
       return true;
     }
     if (corner4 < 20) {
       fixedCorner.x = rectangle.x;
       fixedCorner.y = rectangle.y + rectangle.length;
+      canvas.style.cursor = 'ne-resize';
+
       return true;
     }
   };
   export const inShape = (shape, e)=>{
     console.log("inside inShape function...");
-    if(shape.createShape === 'createRectangle'){
+    if(shape.createShape === 'createRectangle' || shape.createShape === 'createTextField'){
       if(e.offsetX > shape.x && e.offsetX < shape.width + shape.x && e.offsetY > shape.y && e.offsetY < shape.y + shape.length){
         console.log('inside rectangle');
         return true;
@@ -74,7 +81,7 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
     }
     if(shape.createShape === 'createEllipse'){
       const cx = (shape.x + (shape.x + shape.width)) / 2;
-      const cy = (shape.y + (shape.y + shape.length)) / 2;
+      const cy = (shape.y + (shape.y + shape.length)) / 2; 
       const rx = (shape.width) / 2;
       const ry = (shape.length) / 2;
       if(Math.pow((e.offsetX - cx)/rx, 2) + Math.pow((e.offsetY - cy)/ry, 2) <= 1){
