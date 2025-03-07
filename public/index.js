@@ -612,7 +612,6 @@ const handledblclick = (e)=>{
 // || MOUSE EVENTS END
 // || TOUCH EVENTS START
 const handleTouch = (e, callback)=>{
-  if(e.pointerType === 'pen'){
     console.log("pencil detected");
     let touch = e.touches[0];
     let coordinates = { 
@@ -620,10 +619,6 @@ const handleTouch = (e, callback)=>{
       offsetY: touch.clientY - canvas.getBoundingClientRect().top
     }
     callback(coordinates);
-  }
-  else{
-    console.log("pencil not detected");
-  }
 }
 // || HANDLING KEY EVENTS
 const handleKeyDown = (e)=>{
