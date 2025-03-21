@@ -15,10 +15,15 @@ canvas{
     border: 1px black solid;
     width: 100%;
     /* height: 80%; */
-    cursor: auto;
     border: none;
     /* background-color: #FBFBF8; */
 
+}
+.draw-cursor{
+    cursor: url('src/draw.png') 32 32, auto;
+}
+.erase-cursor{
+    cursor: url('src/eraser.png') 32 32, auto;
 }
 .toolbar{
     height: 5vh;
