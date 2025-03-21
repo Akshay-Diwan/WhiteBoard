@@ -20,7 +20,7 @@ export function createRectangle(rectangle){
     ctx.strokeStyle = rectangle.color || '#000000';
     ctx.lineWidth = rectangle.strokeWidth || 3;
     
-    ctx.globalAlpha = rectangle.opacity  || 1;
+    ctx.globalAlpha = rectangle.opacity;
     if(rectangle.background){
       ctx.fillStyle = rectangle.background;
     }
@@ -109,10 +109,15 @@ export function createRectangle(rectangle){
       ctx.globalAlpha = shape.opacity || 1;
       //handwritten
       ctx.beginPath();
+      ctx.lineJoin = "round";  // Ensures rounded joins
+      ctx.lineCap = "round";   // Makes line ends rounded
+
       ctx.moveTo(shape.points[0].x,shape.points[0].y);
-      for(let j in shape.points){
-        ctx.lineTo(shape.points[j].x , shape.points[j].y);
-      }
+      for (let i = 1; i < shape.points.length - 1; i++) {
+        let midX = (shape.points[i].x + shape.points[i + 1].x) / 2;
+        let midY = (shape.points[i].y + shape.points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(shape.points[i].x, shape.points[i].y, midX, midY);
+    }
       ctx.stroke();
       ctx.strokeStyle ='#000000';
       ctx.lineWidth = 1;
