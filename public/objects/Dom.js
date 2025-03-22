@@ -6,6 +6,7 @@ const canvas = document.getElementById("whiteboard");
  export const drawBtn = document.getElementById("draw");
  export const textBoxBtn = document.getElementById("text");
  export const eraser = document.getElementById('eraser');
+ export const graspBtn = document.getElementById('grasp');
  export const propertiesCard = document.getElementById("properties");
  export const colorProperty = document.getElementById("stroke");
  export const strokeWidthProperty = document.getElementById("strokeWidth");

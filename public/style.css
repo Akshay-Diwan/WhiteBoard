@@ -136,6 +136,9 @@ label, p, input[type="text"]{
 .toolbar button:hover{
     background-color: rgb(222, 222, 222);
 }
+.selected-button{
+    background-color: rgb(179, 179, 179);
+}
 .button-grp{
     position: absolute;
     top: 10px;

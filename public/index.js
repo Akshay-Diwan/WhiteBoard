@@ -6,6 +6,9 @@ let canvasDimensions = {
   width: window.innerWidth,
   height: localStorage.getItem('canvas height') || window.innerHeight * 0.95
 }
+let rect = canvas.getBoundingClientRect();
+let scaleX = canvas.width / rect.width;
+let scaleY = canvas.height / rect.height;
 
 let shapes =[];
 let sharing = false;
@@ -127,6 +130,7 @@ const handleColorBtnClick = (background, e) => {
 // || UTILITY FUNCTION ENDS
 // || COMMANDS
 let command;
+let scroll = false;
 const createRect = 1;
 const editRect = 2;
 const moveRect = 3;
@@ -164,6 +168,8 @@ let fixedCorner = {
 
 // || BUTTON FUNCTIONS 
 const rectangleSelected = () => {
+  dom.graspBtn.classList.remove('selected-button');
+  scroll = false;
   if(currentShape){
     deleteDashedBorder(
       currentShape.x,
@@ -185,6 +191,8 @@ const rectangleSelected = () => {
   canvas.style.cursor = "crosshair";
 };
 const ellipseSelected = () =>{
+  dom.graspBtn.classList.remove('selected-button');
+  scroll = false;
   if(currentShape){
   deleteDashedBorder(
     currentShape.x,
@@ -207,6 +215,8 @@ const ellipseSelected = () =>{
   canvas.style.cursor = "crosshair";
 }
 const lineSelected = () =>{
+  dom.graspBtn.classList.remove('selected-button');
+  scroll = false;
   if(currentShape){
   deleteDashedBorder(
     currentShape.x,
@@ -230,6 +240,8 @@ const lineSelected = () =>{
   canvas.style.cursor = "crosshair";
 }
 const drawSelected =()=>{
+  dom.graspBtn.classList.remove('selected-button');
+  scroll = false;
   console.log("draw Selected...");
   if(currentShape){
   deleteDashedBorder(
@@ -253,6 +265,8 @@ const drawSelected =()=>{
   
 }
 const eraserSelected = ()=>{
+  dom.graspBtn.classList.remove('selected-button');
+  scroll = false;
   if(currentShape){
     deleteDashedBorder(
       currentShape.x,
@@ -267,6 +281,17 @@ const eraserSelected = ()=>{
     command = erase;
     canvas.classList.add('erase-cursor');
 }
+}
+const graspClicked = ()=>{
+     !scroll;
+      if(scroll){
+        dom.graspBtn.classList.add('selected-button');
+        permission = false;
+        command = null;
+      }
+      else{
+        dom.graspBtn.classList.remove('selected-button');
+      }
 }
 const handleShareClick = ()=>{
   dom.dialog.showModal();
@@ -338,6 +363,8 @@ const deleteDashedBorder = (x, y, width, length) => {
 
 // || HANDLING MOUSE EVENTS
 const handleMouseDown = (e) => {
+const mouseX = (e.clientX - rect.left) * scaleX;
+const mouseY = (e.clientY - rect.top) * scaleY;
   if(command === erase){
     console.log("Inside mousedown...");
     permission = true;
@@ -348,24 +375,24 @@ const handleMouseDown = (e) => {
       permission = true;
       currentShape.points = JSON.stringify([
         {
-        x: e.offsetX, 
-        y: e.offsetY
+        x:mouseX, 
+        y:mouseY
       }
       ]);
     return;
   }
   
   if(command === createLn){
-    currentShape.x = e.offsetX;
-    currentShape.y = e.offsetY;
+    currentShape.x = mouseX;
+    currentShape.y = mouseY;
     permission = true;
     return;
   }
   if (command === createRect) {
-    currentShape.x = e.offsetX;
-    currentShape.y = e.offsetY;
-    fixedCorner.x = e.offsetX;
-    fixedCorner.y = e.offsetY;
+    currentShape.x = mouseX;
+    currentShape.y = mouseY;
+    fixedCorner.x = mouseX;
+    fixedCorner.y = mouseY;
     permission = true;
     return;
   }
@@ -401,7 +428,7 @@ const handleMouseDown = (e) => {
   if(currentShape === null){
        // || MOVE RECTANGLE CODE STARTS
   const rectindex = shapes
-  .map((rectangle) => onEdge(rectangle, e.offsetX, e.offsetY))
+  .map((rectangle) => onEdge(rectangle, mouseX, mouseY))
   .indexOf(true);
   if (rectindex != -1) {
      command = moveRect;
@@ -410,8 +437,8 @@ const handleMouseDown = (e) => {
        (rectangle) => rectangle != shapes[rectindex]
      );
      shapes = [...otherRect];
-     initialPoint.x = e.offsetX;
-     initialPoint.y = e.offsetY;
+     initialPoint.x = mouseX;
+     initialPoint.y = mouseY;
      permission = true;
 }
        // || MOVE RECTANGLE CODE ENDS
@@ -420,13 +447,15 @@ return;
 };
 // ||  MOUSE MOVE 
 const handleMouseMove = (e) => {
+  const mouseX = (e.clientX - rect.left) * scaleX;
+const mouseY = (e.clientY - rect.top) * scaleY;
   if (!permission){
     // if(!command){
     //   if(currentShape && inRange(currentShape, e, fixedCorner)){
     //     return;
     //   }
     //   let i = shapes  
-    // .map((rectangle) => onEdge(rectangle, e.offsetX, e.offsetY))
+    // .map((rectangle) => onEdge(rectangle, mouseX, mouseY))
     // .indexOf(true);
     // if(i !== -1){
     //   canvas.style.cursor = 'move';
@@ -449,14 +478,14 @@ const handleMouseMove = (e) => {
       clearCanvas();
       if(currentShape.points){
         currentShape.points = JSON.stringify([...JSON.parse(currentShape.points), {
-          x: e.offsetX,
-          y: e.offsetY
+          x: mouseX,
+          y: mouseY
         }]);
       }
       else{
         currentShape.points = JSON.stringify([{
-          x: e.offsetX,
-          y: e.offsetY
+          x: mouseX,
+          y: mouseY
         }]);
       }
      
@@ -467,8 +496,8 @@ const handleMouseMove = (e) => {
     }
   else if(command === createLn){
     clearCanvas();   
-    currentShape.endX = e.offsetX;
-    currentShape.endY = e.offsetY;
+    currentShape.endX = mouseX;
+    currentShape.endY = mouseY;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
@@ -477,12 +506,12 @@ const handleMouseMove = (e) => {
   }
   else if(command === moveRect) {
     clearCanvas();
-    let moveX = e.offsetX - initialPoint.x;
-    let moveY = e.offsetY - initialPoint.y;
-    currentShape.x = currentShape.x + e.offsetX - initialPoint.x;
-    currentShape.y = currentShape.y + e.offsetY - initialPoint.y;
-    initialPoint.x = e.offsetX;
-    initialPoint.y = e.offsetY;
+    let moveX = mouseX - initialPoint.x;
+    let moveY = mouseY - initialPoint.y;
+    currentShape.x = currentShape.x + mouseX - initialPoint.x;
+    currentShape.y = currentShape.y + mouseY - initialPoint.y;
+    initialPoint.x = mouseX;
+    initialPoint.y = mouseY;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
 
   if(currentShape.points){
@@ -498,15 +527,15 @@ const handleMouseMove = (e) => {
   else if (command === editRect) {
     clearCanvas();
     if (fixedCorner.x > currentShape.x) {
-      currentShape.x = e.offsetX;
+      currentShape.x = mouseX;
     }
     if (fixedCorner.y > currentShape.y) {
-      currentShape.y = e.offsetY;
+      currentShape.y = mouseY;
     }
-    let changeX = (Math.abs(fixedCorner.x - e.offsetX) - currentShape.width)/currentShape.width;
-    let changeY = (Math.abs(fixedCorner.y - e.offsetY) - currentShape.length)/currentShape.length;
-    currentShape.width = Math.abs(fixedCorner.x - e.offsetX);
-    currentShape.length = Math.abs(fixedCorner.y - e.offsetY);
+    let changeX = (Math.abs(fixedCorner.x - mouseX) - currentShape.width)/currentShape.width;
+    let changeY = (Math.abs(fixedCorner.y - mouseY) - currentShape.length)/currentShape.length;
+    currentShape.width = Math.abs(fixedCorner.x - mouseX);
+    currentShape.length = Math.abs(fixedCorner.y - mouseY);
     if(currentShape.createShape === 'createTextField'){
       currentShape.font = `${currentShape.length}px "Indie Flower", cursive`;
     }
@@ -525,15 +554,15 @@ const handleMouseMove = (e) => {
   }
   else if (command === createRect) {
     clearCanvas();
-    if (e.offsetX < fixedCorner.x) {
-      currentShape.x = e.offsetX;
+    if (mouseX < fixedCorner.x) {
+      currentShape.x = mouseX;
     }
-    if (e.offsetY < fixedCorner.y) {
-      currentShape.y = e.offsetY;
+    if (mouseY < fixedCorner.y) {
+      currentShape.y = mouseY;
     }
     canvas.style.cursor = "auto";
-    currentShape.length = Math.abs(fixedCorner.y - e.offsetY);
-    currentShape.width = Math.abs(fixedCorner.x - e.offsetX);
+    currentShape.length = Math.abs(fixedCorner.y - mouseY);
+    currentShape.width = Math.abs(fixedCorner.x - mouseX);
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
@@ -545,6 +574,7 @@ const handleMouseUp = () => {
   permission = false;
   if(command === null || currentShape === null || currentShape.name === null){
     dom.propertiesCard.style.visibility = "hidden";
+    currentShape = null;
   }
   else{
     dom.propertiesCard.style.visibility = "visible";
@@ -622,8 +652,8 @@ const handledblclick = (e)=>{
   idx = idx + 1;
   localStorage.setItem('idx', idx);
   sendIndex(idx);
-  currentShape.x = e.offsetX;
-  currentShape.y = e.offsetY;
+  currentShape.x = mouseX;
+  currentShape.y = mouseY;
   createTextField(currentShape);
   console.log("currentShape.height = " + currentShape.height);
   dashedBorder(currentShape.x - 30, currentShape.y - 30, currentShape.width + 30, currentShape.length + 30);
@@ -635,7 +665,9 @@ const handledblclick = (e)=>{
 // || MOUSE EVENTS END
 // || TOUCH EVENTS START
 const handleTouch = (e, callback)=>{
-  if(e.pointerType === 'pen'){
+    if(scroll){
+      return;
+    }
     console.log("pencil detected");
     let touch = e.touches[0];
     let coordinates = { 
@@ -644,10 +676,7 @@ const handleTouch = (e, callback)=>{
     }
     callback(coordinates);
   }
-  else{
-    console.log("pencil not detected");
-  }
-}
+
 // || HANDLING KEY EVENTS
 const handleKeyDown = (e)=>{
  
@@ -758,8 +787,20 @@ function resizeCanvas() {
   canvas.height = canvasDimensions.height;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape && currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
-}
+    rect = canvas.getBoundingClientRect();
+    scaleX = canvas.width / rect.width;
+    scaleY = canvas.height / rect.height;
+   
 
+}
+function handleScroll() {
+  if(!scroll){
+    const scrollTop = window.pageYOffset;
+    const scrollLeft = window.pageXOffset;
+    window.scrollTo(scrollLeft,scrollTop);
+    
+  }
+}
 // // Initial resize
 resizeCanvas();
 
@@ -776,6 +817,7 @@ dom.ellipseBtn.addEventListener("click", ellipseSelected);
 dom.lineBtn.addEventListener("click", lineSelected);
 dom.drawBtn.addEventListener("click", drawSelected);
 dom.eraser.addEventListener('click', eraserSelected);
+dom.graspBtn.addEventListener('click', graspClicked);
 dom.colorProperty.addEventListener("change", handleColorChange);
 dom.strokeWidthProperty.addEventListener("change", handleStrokeWidthChange);
 dom.backgroundProperty.addEventListener("change", handleBackgroundChange);
@@ -801,5 +843,5 @@ for(let j in dom.colorBtns){
 
 window.addEventListener("resize", resizeCanvas);
 document.addEventListener("keydown", handleKeyDown);
-
+window.onscroll = handleScroll();
 // || ADDING EVENTLISTENERS END
