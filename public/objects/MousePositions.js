@@ -20,7 +20,7 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
       x <= rectangle.x + rectangle.width;
   
     if (nearLeftEdge || nearRightEdge || nearTopEdge || nearBottomEdge) {
-      canvas.style.cursor = "move";
+      canvas.classList.add("create-move");
   
       return true;
     }
@@ -29,44 +29,45 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
   export const inRange = (rectangle, e, fixedCorner) => {
     //Anticlockwise
     const corner1 = Math.sqrt(
-      Math.pow(rectangle.x - e.offsetX, 2) + Math.pow(rectangle.y - e.offsetY, 2)
+      Math.pow(rectangle.x - e.mouseX, 2) + Math.pow(rectangle.y - e.mouseY, 2)
     );
     const corner2 = Math.sqrt(
-      Math.pow(rectangle.x - e.offsetX, 2) +
-        Math.pow(rectangle.y + rectangle.length - e.offsetY, 2)
+      Math.pow(rectangle.x - e.mouseX, 2) +
+        Math.pow(rectangle.y + rectangle.length - e.mouseY, 2)
     );
     const corner3 = Math.sqrt(
-      Math.pow(rectangle.x + rectangle.width - e.offsetX, 2) +
-        Math.pow(rectangle.y + rectangle.length - e.offsetY, 2)
+      Math.pow(rectangle.x + rectangle.width - e.mouseX, 2) +
+        Math.pow(rectangle.y + rectangle.length - e.mouseY, 2)
     );
     const corner4 = Math.sqrt(
-      Math.pow(rectangle.x + rectangle.width - e.offsetX, 2) +
-        Math.pow(rectangle.y - e.offsetY, 2)
+      Math.pow(rectangle.x + rectangle.width - e.mouseX, 2) +
+        Math.pow(rectangle.y - e.mouseY, 2)
     );
     if (corner1 < 20) {
       fixedCorner.y = rectangle.y + rectangle.length;
       fixedCorner.x = rectangle.x + rectangle.width;
-      canvas.style.cursor = 'nw-resize';
+      canvas.classList.add('create-nw');
+      
       return true;
     }
     if (corner2 < 20) {
       fixedCorner.x = rectangle.x + rectangle.width;
       fixedCorner.y = rectangle.y;
-      canvas.style.cursor = 'sw-resize';
+      canvas.classList.add('create-sw');
 
       return true;
     }
     if (corner3 < 20) {
       fixedCorner.x = rectangle.x;
       fixedCorner.y = rectangle.y;
-      canvas.style.cursor = 'se-resize';
+      canvas.classList.add('create-se');
 
       return true;
     }
     if (corner4 < 20) {
       fixedCorner.x = rectangle.x;
       fixedCorner.y = rectangle.y + rectangle.length;
-      canvas.style.cursor = 'ne-resize';
+      canvas.classList.add('create-ne');
 
       return true;
     }
@@ -74,7 +75,7 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
   export const inShape = (shape, e)=>{
     console.log("inside inShape function...");
     if(shape.createShape === 'createRectangle' || shape.createShape === 'createTextField'){
-      if(e.offsetX > shape.x && e.offsetX < shape.width + shape.x && e.offsetY > shape.y && e.offsetY < shape.y + shape.length){
+      if(e.mouseX > shape.x && e.mouseX < shape.width + shape.x && e.mouseY > shape.y && e.mouseY < shape.y + shape.length){
         console.log('inside rectangle');
         return true;
       }
@@ -84,7 +85,7 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
       const cy = (shape.y + (shape.y + shape.length)) / 2; 
       const rx = (shape.width) / 2;
       const ry = (shape.length) / 2;
-      if(Math.pow((e.offsetX - cx)/rx, 2) + Math.pow((e.offsetY - cy)/ry, 2) <= 1){
+      if(Math.pow((e.mouseX - cx)/rx, 2) + Math.pow((e.mouseY - cy)/ry, 2) <= 1){
         console.log('inside ellipse');
         return true;
       }
@@ -99,8 +100,8 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
       }
     }
     if(shape.createShape === 'createLine'){
-      console.log("first slope: "+(shape.y - e.offsetY)/(shape.x - e.offsetX) + " second slope: "+(shape.y - shape.endY)/(shape.x - shape.endX) );
-      if(e.offsetX > shape.x && e.offsetX < shape.endX && e.offsetY > shape.y && e.offsetY < shape.endY){
+      console.log("first slope: "+(shape.y - e.mouseY)/(shape.x - e.mouseX) + " second slope: "+(shape.y - shape.endY)/(shape.x - shape.endX) );
+      if(e.mouseX > shape.x && e.mouseX < shape.endX && e.mouseY > shape.y && e.mouseY < shape.endY){
         console.log('inside line');
         return true;
       }
@@ -109,8 +110,8 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
   }
   //trial
  const filterfunction = (point, e)=>{
-    console.log("pointer x: "+ e.offsetX + " pointer y: " + e.offsetY);
+    console.log("pointer x: "+ e.mouseX + " pointer y: " + e.mouseY);
     // console.log(`x: ${point.x}, y: ${point.y}`);
-    return point.x - 10 < e.offsetX && point.x + 10 > e.offsetX &&  point.y - 10 < e.offsetY && point.y + 10 > e.offsetY;
+    return point.x - 10 < e.mouseX && point.x + 10 > e.mouseX &&  point.y - 10 < e.mouseY && point.y + 10 > e.mouseY;
   }
 

@@ -188,7 +188,9 @@ const rectangleSelected = () => {
   localStorage.setItem('idx', idx);
   sendIndex(idx);
   command = createRect;
-  canvas.style.cursor = "crosshair";
+
+  canvas.classList.add('create-cursor');
+
 };
 const ellipseSelected = () =>{
   dom.graspBtn.classList.remove('selected-button');
@@ -212,7 +214,7 @@ const ellipseSelected = () =>{
   sendIndex(idx);
 
   command = createRect;
-  canvas.style.cursor = "crosshair";
+  canvas.classList.add('create-cursor');
 }
 const lineSelected = () =>{
   dom.graspBtn.classList.remove('selected-button');
@@ -237,7 +239,7 @@ const lineSelected = () =>{
   
 
   command = createLn;
-  canvas.style.cursor = "crosshair";
+  canvas.classList.add('create-cursor');
 }
 const drawSelected =()=>{
   dom.graspBtn.classList.remove('selected-button');
@@ -261,7 +263,12 @@ const drawSelected =()=>{
   localStorage.setItem('idx', idx);
   sendIndex(idx);
   command = draw;
-  canvas.classList.add('draw-cursor');
+  try{
+    canvas.classList.add('draw-cursor');
+  }
+  catch(err){
+
+  }
   
 }
 const eraserSelected = ()=>{
@@ -277,10 +284,15 @@ const eraserSelected = ()=>{
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
     currentShape = null;
-    console.log("Eraser Selected");
-    command = erase;
+  }
+  console.log("Eraser Selected");
+  command = erase;
+  try{
     canvas.classList.add('erase-cursor');
-}
+  }
+  catch(err){
+
+  }
 }
 const graspClicked = ()=>{
      !scroll;
@@ -363,6 +375,7 @@ const deleteDashedBorder = (x, y, width, length) => {
 
 // || HANDLING MOUSE EVENTS
 const handleMouseDown = (e) => {
+
 const mouseX = (e.clientX - rect.left) * scaleX;
 const mouseY = (e.clientY - rect.top) * scaleY;
   if(command === erase){
@@ -407,7 +420,7 @@ const mouseY = (e.clientY - rect.top) * scaleY;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
 
-    const editingRectindex = shapes.map((rectangle) => inRange(rectangle, e, fixedCorner)).indexOf(true);
+    const editingRectindex = shapes.map((rectangle) => inRange(rectangle, {mouseX, mouseY}, fixedCorner)).indexOf(true);
   if (
     editingRectindex != -1 &&
     shapes[editingRectindex].name === currentShape.name
@@ -468,7 +481,7 @@ const mouseY = (e.clientY - rect.top) * scaleY;
     return;
   }
   if(command === erase){
-    shapes = shapes.filter(shape => !inShape(shape, e));
+    shapes = shapes.filter(shape => !inShape(shape, {mouseX: mouseX, mouseY: mouseY}));
     clearCanvas();
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes', JSON.stringify(shapes));
@@ -560,7 +573,7 @@ const mouseY = (e.clientY - rect.top) * scaleY;
     if (mouseY < fixedCorner.y) {
       currentShape.y = mouseY;
     }
-    canvas.style.cursor = "auto";
+    canvas.classList.remove('create-cursor');
     currentShape.length = Math.abs(fixedCorner.y - mouseY);
     currentShape.width = Math.abs(fixedCorner.x - mouseX);
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
@@ -584,16 +597,27 @@ const handleMouseUp = () => {
     dom.strokeWidthProperty.value = (currentShape.strokeWidth === 1)?"0":`${currentShape.strokeWidth * 2}`;
 
   }
+  if(command === editRect){
+    canvas.classList.remove('create-ne');
+    canvas.classList.remove('create-se');
+    canvas.classList.remove('create-nw');
+    canvas.classList.remove('create-sw');
+
+  }
+  if(command === moveRect){
+    canvas.classList.remove('create-move');
+  }
   if(command === draw){
      let {minX, minY, maxX, maxY} = findCorners();
      currentShape.x = minX;
      currentShape.y = minY;
      currentShape.width = maxX - minX;
      currentShape.length = maxY - minY;
-     canvas.classList.remove('draw-cursor');
+    canvas.classList.remove('draw-cursor');
   }
   if(command === erase){
     canvas.classList.remove('erase-cursor');
+    console.log('this ran immediately...');
   }
   if(!(command === createLn || command === null || currentShape === null)){
     console.log(`x: ${currentShape.x} y: ${currentShape.y} width: ${currentShape.width} length: ${currentShape.length}`);
@@ -626,8 +650,7 @@ const handleMouseUp = () => {
   localStorage.setItem('canvas height', canvasDimensions.height);
   sendToServer('change in shapes',shapes);
 
-   
-  canvas.style.cursor = "auto";
+       
 };
 
 const handledblclick = (e)=>{
@@ -666,16 +689,18 @@ const handledblclick = (e)=>{
 // || TOUCH EVENTS START
 const handleTouch = (e, callback)=>{
 
-    if(scroll){
-      return;
-    }
+    e.preventDefault();
+    // if(scroll){
+    //   return;
+    // }
+
     console.log("pencil detected");
 
 
     let touch = e.touches[0];
     let coordinates = { 
-      offsetX: touch.clientX - canvas.getBoundingClientRect().left,
-      offsetY: touch.clientY - canvas.getBoundingClientRect().top
+      clientX: touch.clientX,
+      clientY: touch.clientY 
     }
     callback(coordinates);
 
@@ -799,11 +824,11 @@ function resizeCanvas() {
 
 }
 function handleScroll() {
+  console.log("inside scroll");
   if(!scroll){
     const scrollTop = window.pageYOffset;
     const scrollLeft = window.pageXOffset;
-    window.scrollTo(scrollLeft,scrollTop);
-    
+    window.scrollTo(scrollLeft,scrollTop); 
   }
 }
 // // Initial resize
@@ -815,7 +840,7 @@ canvas.addEventListener("mousemove", handleMouseMove);
 canvas.addEventListener("mouseup", handleMouseUp);
 canvas.addEventListener("dblclick", handledblclick);
 canvas.addEventListener("touchstart",(e)=> handleTouch(e, handleMouseDown));
-canvas.addEventListener("touchmove", (e) => handleTouch(e, handleMouseMove));
+canvas.addEventListener("touchmove", (e) => handleTouch(e, handleMouseMove), {passive: false});
 canvas.addEventListener("touchend", handleMouseUp);
 dom.rectBtn.addEventListener("click", rectangleSelected);
 dom.ellipseBtn.addEventListener("click", ellipseSelected);
