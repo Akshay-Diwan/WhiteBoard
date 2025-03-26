@@ -688,18 +688,24 @@ const handledblclick = (e)=>{
 // || MOUSE EVENTS END
 // || TOUCH EVENTS START
 const handleTouch = (e, callback)=>{
+
     e.preventDefault();
     // if(scroll){
     //   return;
     // }
+
     console.log("pencil detected");
+
+
     let touch = e.touches[0];
     let coordinates = { 
       clientX: touch.clientX,
       clientY: touch.clientY 
     }
     callback(coordinates);
+
   }
+
 
 // || HANDLING KEY EVENTS
 const handleKeyDown = (e)=>{
@@ -869,3 +875,4 @@ window.addEventListener("resize", resizeCanvas);
 document.addEventListener("keydown", handleKeyDown);
 window.onscroll = handleScroll();
 // || ADDING EVENTLISTENERS END
+
