@@ -25,6 +25,25 @@ canvas{
 .erase-cursor{
     cursor: url('src/eraser.png') 32 32, auto;
 }
+.create-cursor{
+    cursor: crosshair;
+}
+.create-nw{
+    cursor: nw-resize;
+}
+.create-sw{
+    cursor: sw-resize;
+}
+.create-ne{
+    cursor: ne-resize;
+}
+.create-se{
+    cursor: se-resize;
+}
+.create-move{
+    cursor: move;
+}
+
 .toolbar{
     height: 5vh;
     width: 90%;
