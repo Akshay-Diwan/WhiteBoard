@@ -15,8 +15,13 @@
         <button id="draw"><img src="src/draw.png" alt=""></button>
         <button id="eraser"><img src="src/eraser.svg" alt=""></button>
         <button id="grasp"><img src="src/grab.webp" alt=""></button>
+        <!-- <button id="lock"><img src="src/lock.png" alt=""></button> -->
+         <label for = "lock" id="lock-label">
+         <input type="checkbox" name="lock" id="lock"></input>
+         <img id = "lock-image" src="src/lock.png" alt="">
+         </label>
     </nav>
-    <canvas id="whiteboard" ></canvas>
+    <canvas id="whiteboard"></canvas>
     <nav id="properties" class="properties">
 
         <label for="stroke">Stroke</label>
@@ -70,7 +75,7 @@
         <input class="username-input" type="text" name="username" id=creator-name" placeholder="Blue Blaze">
         <br>
         <p class="username-label">Link:</p>
-        <p class="collab-link" type="text" id="collablink">xyz <button class="copy-button"><img src="./src/copy.png" alt=""></button></p>
+        <p class="collab-link" type="text"><span id="collablink">xyz</span><button class="copy-button" id="copyBtn"><img src="./src/copy.png" alt=""></button></p>
         <div class="to-center to-bottom">
         <button id = "stopLive" style="margin-top: 30px" class="startLive nunito"><img class="play-button" src="src/stop.png" width="50" alt=""><p class="play-button-text">stop session</p></button>
         </div>

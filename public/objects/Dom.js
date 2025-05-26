@@ -20,11 +20,12 @@ const canvas = document.getElementById("whiteboard");
  export const stopbox = document.getElementById("stopBox");
  export const startLive = document.getElementById("startLive");
  export const stopLive = document.getElementById("stopLive");
+ export const copyBtn = document.getElementById("copyBtn");
  export const collabLink = document.getElementById("collablink");
  export const linkInput = document.getElementById("linkInput");
  export const joinOptionBtn = document.getElementById("joinAnother");
  export const joinbtn = document.getElementById("join");
  export const inputBox = document.getElementById("inputBox");
  export const closeBtn = document.getElementById("close");
-
+export const lockBtn = document.getElementById("lock");
 export default canvas;

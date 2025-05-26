@@ -137,7 +137,7 @@ const moveRect = 3;
 const createLn = 4;
 const draw = 5;
 const erase = 6;
-const text = 7;
+// const text = 7;
 let idx = (+localStorage.getItem('idx')) || 1;
 let permission = false;
 
@@ -169,6 +169,9 @@ let fixedCorner = {
 // || BUTTON FUNCTIONS 
 const rectangleSelected = () => {
   dom.graspBtn.classList.remove('selected-button');
+   canvas.classList.forEach((value)=>{
+    canvas.classList.remove(value);
+  });
   scroll = false;
   if(currentShape){
     deleteDashedBorder(
@@ -194,6 +197,9 @@ const rectangleSelected = () => {
 };
 const ellipseSelected = () =>{
   dom.graspBtn.classList.remove('selected-button');
+  canvas.classList.forEach((value)=>{
+    canvas.classList.remove(value);
+  });
   scroll = false;
   if(currentShape){
   deleteDashedBorder(
@@ -218,6 +224,9 @@ const ellipseSelected = () =>{
 }
 const lineSelected = () =>{
   dom.graspBtn.classList.remove('selected-button');
+   canvas.classList.forEach((value)=>{
+    canvas.classList.remove(value);
+  });
   scroll = false;
   if(currentShape){
   deleteDashedBorder(
@@ -243,6 +252,9 @@ const lineSelected = () =>{
 }
 const drawSelected =()=>{
   dom.graspBtn.classList.remove('selected-button');
+   canvas.classList.forEach((value)=>{
+    canvas.classList.remove(value);
+  });
   scroll = false;
   console.log("draw Selected...");
   if(currentShape){
@@ -273,6 +285,9 @@ const drawSelected =()=>{
 }
 const eraserSelected = ()=>{
   dom.graspBtn.classList.remove('selected-button');
+   canvas.classList.forEach((value)=>{
+    canvas.classList.remove(value);
+  });
   scroll = false;
   if(currentShape){
     deleteDashedBorder(
@@ -584,8 +599,12 @@ const mouseY = (e.clientY - rect.top) * scaleY;
 };
 }
 const handleMouseUp = () => {
-  permission = false;
-  if(command === null || currentShape === null || currentShape.name === null){
+    // check lock condition
+  // if(!dom.lockBtn.checked){
+  //   console.log("lock check status: " + dom.lockBtn.check);
+    permission = false;
+  // }
+  if(command === null || currentShape === null || currentShape.name === null){  // Property card is shown if object is selected
     dom.propertiesCard.style.visibility = "hidden";
     currentShape = null;
   }
@@ -595,11 +614,10 @@ const handleMouseUp = () => {
     dom.backgroundProperty.value = currentShape.background || '#000000';
     dom.colorProperty.value = currentShape.color || '#000000';
     dom.strokeWidthProperty.value = (currentShape.strokeWidth === 1)?"0":`${currentShape.strokeWidth * 2}`;
-
   }
   if(command === editRect){
     canvas.classList.remove('create-ne');
-    canvas.classList.remove('create-se');
+    canvas.classList.remove('create-se');   // ye charro kaam nahi kar rahe hai
     canvas.classList.remove('create-nw');
     canvas.classList.remove('create-sw');
 
@@ -613,11 +631,12 @@ const handleMouseUp = () => {
      currentShape.y = minY;
      currentShape.width = maxX - minX;
      currentShape.length = maxY - minY;
-    canvas.classList.remove('draw-cursor');
+
+    (!dom.lockBtn.checked)?canvas.classList.remove('draw-cursor'):console.log("not Checked");   // check lock condition
   }
   if(command === erase){
-    canvas.classList.remove('erase-cursor');
-    console.log('this ran immediately...');
+    (!dom.lockBtn.checked)?canvas.classList.remove('erase-cursor'):console.log("not Checked");  // check lock condition
+    console.log('this ran immediately...'); 
   }
   if(!(command === createLn || command === null || currentShape === null)){
     console.log(`x: ${currentShape.x} y: ${currentShape.y} width: ${currentShape.width} length: ${currentShape.length}`);
@@ -626,21 +645,21 @@ const handleMouseUp = () => {
       currentShape.y,
       currentShape.width,
       currentShape.length
-    );
+    );  
   }
-  command = null;
+  (!dom.lockBtn.checked)?command = null:console.log("Checked"); // check lock condition
   if(!currentShape || currentShape.name === null){
     return;
   }
   shapes = [...shapes, { ...currentShape }];
-  console.log("Current Shape:");
-  for(let j in currentShape){
-    console.log(currentShape[j]);
-  }
-  console.log("Shapes: ");
-  for(let j in shapes){
-    console.log(shapes[j]);
-  }
+  // console.log("Current Shape:");
+  // for(let j in currentShape){
+  //   console.log(currentShape[j]);
+  // }
+  // console.log("Shapes: ");
+  // for(let j in shapes){
+  //   console.log(shapes[j]);
+  // }
   localStorage.setItem('shapes', JSON.stringify(shapes));
   if(currentShape.y + currentShape.length >= canvasDimensions.height - window.innerHeight){
     canvasDimensions.height += window.innerHeight;
@@ -649,6 +668,27 @@ const handleMouseUp = () => {
   }
   localStorage.setItem('canvas height', canvasDimensions.height);
   sendToServer('change in shapes',shapes);
+  switch(command){
+    case createRect:
+      if(currentShape.shape == 'createEllipse'){
+          ellipseSelected();
+      }
+      else{
+        rectangleSelected();
+      }
+      break;
+      case createLn:
+        lineSelected();
+        break;
+      case draw:
+        drawSelected();
+        break;
+      case  erase:
+        eraserSelected();
+        break;
+
+        
+  }
 
        
 };
@@ -825,6 +865,11 @@ function handleScroll() {
     window.scrollTo(scrollLeft,scrollTop); 
   }
 }
+function copyToClipboard(){
+  navigator.clipboard.writeText(socket.id)
+  .then(()=>alert("Copied"))
+  .catch(()=>alert("Error ocurred in copying"))
+}
 // // Initial resize
 resizeCanvas();
 
@@ -854,7 +899,7 @@ dom.joinOptionBtn.addEventListener("click", handleJoinAnother);
 dom.joinbtn.addEventListener("click", handleJoinClick)
 dom.dialog.addEventListener("click", handleDialogClick);
 dom.stopbox.addEventListener("click", handleDialogClick);
-
+dom.copyBtn.addEventListener("click", copyToClipboard);
 console.log(dom.colorBtns);
 for(let j in dom.colorBtns) {
   if(!Number.isFinite(dom.colorBtns[j]))

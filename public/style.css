@@ -126,7 +126,6 @@ canvas{
 }
 
 .color-input{
-    
     width: 40px;
     height: 50px;
     outline: none;
@@ -152,7 +151,7 @@ label, p, input[type="text"]{
     align-items: center;
     justify-content: center;
 }
-.toolbar button:hover{
+.toolbar button:hover, #lock-image:hover{
     background-color: rgb(222, 222, 222);
 }
 .selected-button{
@@ -213,7 +212,7 @@ label, p, input[type="text"]{
     cursor: pointer;
     background-color: #B6B6B4;
 }
-button:hover{
+button:hover, #lock-image:hover{
     cursor: pointer;
 }
 input:hover{
@@ -223,6 +222,22 @@ input:hover{
 button img{
     width: 30px; 
 }
+#lock{
+    width:0px;
+}
+#lock-label{
+    margin: 0px;
+}
+#lock-image{
+    opacity: 0.7;
+    width: 32px;
+    border-radius: 2px;
+    padding: 5px;
+}
+#lock:checked + #lock-image{
+    background-color: rgb(160, 160, 160);
+}
+
 .trial{
     position: absolute;
     right: 10px;
@@ -273,7 +288,7 @@ button img{
     justify-content: center;
     align-items: center;
     opacity: 0.5;
-    /* height: 2.5rem; */
+
 }
 .copy-button:hover{
     background-color: rgba(0, 0, 0, 0.463);
