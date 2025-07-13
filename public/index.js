@@ -1,16 +1,26 @@
 import canvas,* as dom from './objects/Dom.js';
-import clearCanvas,{createRectangle, createEllipse, createLine, createArbitary, createTextField} from './objects/rectangle.js';
+import clearCanvas,{createRectangle, createEllipse, createLine, createArbitary, createTextField, zoomCanvas} from './objects/rectangle.js';
 import { onEdge, inRange, inShape} from './objects/MousePositions.js';
 import { dashedBorder } from './objects/rectangle.js';
+// import rough from 'roughjs';
+
 let canvasDimensions = {
   width: window.innerWidth,
-  height: localStorage.getItem('canvas height') || window.innerHeight * 0.95
+  height: window.innerHeight
 }
-let rect = canvas.getBoundingClientRect();
-let scaleX = canvas.width / rect.width;
-let scaleY = canvas.height / rect.height;
 
+let rect = canvas.getBoundingClientRect();
+  // console.log(`rect top: ${rect.top} rect left: ${rect.left}`)
+  // console.log(`canvas width: ${canvas.width}, canvas height: ${canvas.height}`)
+  // console.log(`rect width: ${rect.width} rect height: ${rect.height}`)
 let shapes =[];
+let scale = 1;
+let h = 0;
+let ch = 0;
+let ph = 0;
+let k  = 0;
+let ck = 0;
+let pk = 0;
 let sharing = false;
 if(localStorage.getItem('shapes')) shapes = JSON.parse(localStorage.getItem('shapes'));
 const socket = io();
@@ -310,6 +320,7 @@ const eraserSelected = ()=>{
   }
 }
 const graspClicked = ()=>{
+    console.log("GRASP CLICKEDD....")
      !scroll;
       if(scroll){
         dom.graspBtn.classList.add('selected-button');
@@ -390,9 +401,10 @@ const deleteDashedBorder = (x, y, width, length) => {
 
 // || HANDLING MOUSE EVENTS
 const handleMouseDown = (e) => {
-
-const mouseX = (e.clientX - rect.left) * scaleX;
-const mouseY = (e.clientY - rect.top) * scaleY;
+// console.log("rect.left: " + rect.left)
+// console.log("rect.right:" + rect.top)
+let [mouseX, mouseY] = scaleMousePosition(e.pageX, e.pageY)
+console.log(` HANDLE MOUSE DOWN smouseX : ${mouseX}, mouseY: ${mouseY}`)
   if(command === erase){
     console.log("Inside mousedown...");
     permission = true;
@@ -465,8 +477,9 @@ const mouseY = (e.clientY - rect.top) * scaleY;
        (rectangle) => rectangle != shapes[rectindex]
      );
      shapes = [...otherRect];
-     initialPoint.x = mouseX;
+     initialPoint.x = mouseX; 
      initialPoint.y = mouseY;
+     dashedBorder(currentShape.x - 1, currentShape.y - 1, currentShape.width + 2, currentShape.length + 2)
      permission = true;
 }
        // || MOVE RECTANGLE CODE ENDS
@@ -475,9 +488,11 @@ return;
 };
 // ||  MOUSE MOVE 
 const handleMouseMove = (e) => {
-  const mouseX = (e.clientX - rect.left) * scaleX;
-const mouseY = (e.clientY - rect.top) * scaleY;
-  if (!permission){
+let [mouseX, mouseY] = scaleMousePosition(e.pageX, e.pageY)
+  if (!permission || !command){
+    if(command){
+      return;
+    }
     // if(!command){
     //   if(currentShape && inRange(currentShape, e, fixedCorner)){
     //     return;
@@ -492,9 +507,26 @@ const mouseY = (e.clientY - rect.top) * scaleY;
     //   canvas.style.cursor = 'auto';
     // }
     // }
-    
+    if(currentShape !== null && currentShape.createShape !== null && inRange(currentShape, {mouseX, mouseY}, fixedCorner)){
+       console.log("NEAR CORNER OF SELECTED OBJECT");
+    } 
+    else{   
+    const rectindex = shapes
+  .map((rectangle) => onEdge(rectangle, mouseX, mouseY))
+  .indexOf(true);
+    if((rectindex !== -1)){
+      console.log("NEAR EDGE OF AN OBJECT")
+      canvas.classList.add("move-cursor");
+   }
+   else{
+    canvas.classList.remove("move-cursor");
+    canvas.classList.remove("ne-cursor","se-cursor","nw-cursor", "sw-cursor")
+   }
+  }
     return;
   }
+  console.log(`mouse x: ${e.pageX}, mouse y: ${e.pageY}`)
+  
   if(command === erase){
     shapes = shapes.filter(shape => !inShape(shape, {mouseX: mouseX, mouseY: mouseY}));
     clearCanvas();
@@ -543,10 +575,11 @@ const mouseY = (e.clientY - rect.top) * scaleY;
     shapes.map(shape => shapeCreator[shape.createShape](shape));
 
   if(currentShape.points){
-  if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape, 1, 1, moveX, moveY);
+  if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape, 1, 1,0,0, moveX, moveY);
     return;
     }
     shapeCreator[currentShape.createShape](currentShape);
+    dashedBorder(currentShape.x - 1, currentShape.y - 1, currentShape.width + 2, currentShape.length + 2)
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
     sendToServer('change in shapes',shapes);
     sendToServer('creating shape',currentShape);
@@ -560,17 +593,17 @@ const mouseY = (e.clientY - rect.top) * scaleY;
     if (fixedCorner.y > currentShape.y) {
       currentShape.y = mouseY;
     }
-    let changeX = (Math.abs(fixedCorner.x - mouseX) - currentShape.width)/currentShape.width;
-    let changeY = (Math.abs(fixedCorner.y - mouseY) - currentShape.length)/currentShape.length;
+    let scaleX = Math.abs(fixedCorner.x - mouseX)/currentShape.width
+    let scaleY = Math.abs(fixedCorner.y - mouseY)/currentShape.length 
     currentShape.width = Math.abs(fixedCorner.x - mouseX);
     currentShape.length = Math.abs(fixedCorner.y - mouseY);
     if(currentShape.createShape === 'createTextField'){
-      currentShape.font = `${currentShape.length}px "Indie Flower", cursive`;
+      currentShape.font = `${currentShape.length * 0.7}px "Indie Flower", cursive`;
     }
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
     if(currentShape.points){
-      shapeCreator[currentShape.createShape](currentShape, 1 + changeX, 1 + changeY);
+      shapeCreator[currentShape.createShape](currentShape, scaleX, scaleY, fixedCorner.x, fixedCorner.y);
     }
     else{
       shapeCreator[currentShape.createShape](currentShape);
@@ -596,7 +629,7 @@ const mouseY = (e.clientY - rect.top) * scaleY;
     if(currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
     sendToServer('creating shape',currentShape);
 
-};
+}
 }
 const handleMouseUp = () => {
     // check lock condition
@@ -623,7 +656,7 @@ const handleMouseUp = () => {
 
   }
   if(command === moveRect){
-    canvas.classList.remove('create-move');
+    canvas.classList.remove('move-cursor');
   }
   if(command === draw){
      let {minX, minY, maxX, maxY} = findCorners();
@@ -663,15 +696,15 @@ const handleMouseUp = () => {
   localStorage.setItem('shapes', JSON.stringify(shapes));
   if(currentShape.y + currentShape.length >= canvasDimensions.height - window.innerHeight){
     canvasDimensions.height += window.innerHeight;
-    resizeCanvas();
+    resizeCanvas(false, true);
     sendToServer('canvas dimensions', canvasDimensions);
   }
   localStorage.setItem('canvas height', canvasDimensions.height);
   sendToServer('change in shapes',shapes);
   switch(command){
     case createRect:
-      if(currentShape.shape == 'createEllipse'){
-          ellipseSelected();
+      if(currentShape.createShape == 'createEllipse'){
+        ellipseSelected();
       }
       else{
         rectangleSelected();
@@ -694,6 +727,8 @@ const handleMouseUp = () => {
 };
 
 const handledblclick = (e)=>{
+  const [mouseX, mouseY] = scaleMousePosition(e.pageX, e.pageY)
+  console.log("Handle DblClick")
   if(currentShape){
     deleteDashedBorder(
       currentShape.x,
@@ -846,17 +881,26 @@ const handleOpacityChange = (e)=>{
 
 
 // // Resize canvas to match the viewport size
-function resizeCanvas() {
-  canvas.width = canvasDimensions.width;
-  canvas.height = canvasDimensions.height;
-    shapes.map(shape => shapeCreator[shape.createShape](shape));
+function resizeCanvas(extend_x = false, extend_y = false) {
+  if(extend_y) {
+    canvas.height += window.innerHeight;
+    console.log("Inside resize canvas extend_y")
+    console.log(canvas.height)
+    // canvas.style.height = "200%";
+  }
+  else canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+  
+  // canvas.height = canvasDimensions.height;
+  console.log(`Window width: ${window.innerWidth} , Window height: ${window.innerHeight}`);
+  shapes.map(shape => shapeCreator[shape.createShape](shape));
   if(currentShape && currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
-    rect = canvas.getBoundingClientRect();
-    scaleX = canvas.width / rect.width;
-    scaleY = canvas.height / rect.height;
-   
-
+    // rect = canvas.getBoundingClientRect();
+    // console.log(`rect top: ${rect.top} rect left: ${rect.left}`)
+    // console.log(`canvas width: ${canvas.width}, canvas height: ${canvas.height}`)
+    // console.log(`rect width: ${rect.width} rect height: ${rect.height}`)
 }
+
 function handleScroll() {
   console.log("inside scroll");
   if(!scroll){
@@ -865,6 +909,25 @@ function handleScroll() {
     window.scrollTo(scrollLeft,scrollTop); 
   }
 }
+function handleWheel(e){
+  if(e.ctrlKey || Math.abs(e.deltaY) < 10 && scroll){
+    e.preventDefault()
+    let zoom_factor = e.deltaY > 0 ? 0.99 : 1.01
+    ch = ch +  (e.pageX - h) / scale;
+    h = e.pageX;
+    ck = ck +  (e.pageY - k) / scale;
+    k = e.pageY;
+    scale *= zoom_factor
+    scale = Math.min(Math.max(scale, 0.5), 5);
+    zoomCanvas(e.pageX, e.pageY, scale);
+    shapes.map(shape => shapeCreator[shape.createShape](shape));
+    if(currentShape && currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
+  }
+}
+function scaleMousePosition(mouseX, mouseY){
+   return [(mouseX - h) / scale + ch ,(mouseY - k) / scale + ck]
+  // return [mouseX, mouseY]
+} 
 function copyToClipboard(){
   navigator.clipboard.writeText(socket.id)
   .then(()=>alert("Copied"))
@@ -881,6 +944,7 @@ canvas.addEventListener("dblclick", handledblclick);
 canvas.addEventListener("touchstart",(e)=> handleTouch(e, handleMouseDown));
 canvas.addEventListener("touchmove", (e) => handleTouch(e, handleMouseMove), {passive: false});
 canvas.addEventListener("touchend", handleMouseUp);
+canvas.addEventListener("wheel", (e) => handleWheel(e));
 dom.rectBtn.addEventListener("click", rectangleSelected);
 dom.ellipseBtn.addEventListener("click", ellipseSelected);
 dom.lineBtn.addEventListener("click", lineSelected);
@@ -900,6 +964,7 @@ dom.joinbtn.addEventListener("click", handleJoinClick)
 dom.dialog.addEventListener("click", handleDialogClick);
 dom.stopbox.addEventListener("click", handleDialogClick);
 dom.copyBtn.addEventListener("click", copyToClipboard);
+
 console.log(dom.colorBtns);
 for(let j in dom.colorBtns) {
   if(!Number.isFinite(dom.colorBtns[j]))

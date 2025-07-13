@@ -1,6 +1,6 @@
 import canvas from "./Dom.js";
 export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the left or right edge
-    const buffer = 20;      
+    const buffer = 30;      
     const nearLeftEdge =
       Math.abs(x - rectangle.x) <= buffer &&
       y >= rectangle.y &&
@@ -46,29 +46,36 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
     if (corner1 < 20) {
       fixedCorner.y = rectangle.y + rectangle.length;
       fixedCorner.x = rectangle.x + rectangle.width;
-      canvas.classList.add('create-nw');
+      canvas.classList.remove('move-cursor')
+      canvas.classList.remove("ne-cursor","se-cursor","nw-cursor", "sw-cursor")
+      canvas.classList.add('nw-cursor');
       
       return true;
     }
     if (corner2 < 20) {
       fixedCorner.x = rectangle.x + rectangle.width;
       fixedCorner.y = rectangle.y;
-      canvas.classList.add('create-sw');
+      canvas.classList.remove('move-cursor')
+      canvas.classList.remove("ne-cursor","se-cursor","nw-cursor", "sw-cursor")
+      canvas.classList.add('sw-cursor');
 
       return true;
     }
     if (corner3 < 20) {
       fixedCorner.x = rectangle.x;
       fixedCorner.y = rectangle.y;
-      canvas.classList.add('create-se');
+      canvas.classList.remove('move-cursor')
+      canvas.classList.remove("ne-cursor","se-cursor","nw-cursor", "sw-cursor")
+      canvas.classList.add('se-cursor');
 
       return true;
     }
-    if (corner4 < 20) {
+    if (corner4 < 30) {
       fixedCorner.x = rectangle.x;
       fixedCorner.y = rectangle.y + rectangle.length;
-      canvas.classList.add('create-ne');
-
+      canvas.classList.remove('move-cursor')
+      canvas.classList.remove("ne-cursor","se-cursor","nw-cursor", "sw-cursor")
+      canvas.classList.add('ne-cursor');
       return true;
     }
   };

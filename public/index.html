@@ -8,18 +8,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">  
 </head>
 <body>
+    <nav class= "controls">
     <nav class="toolbar">
         <button id="rectangle"><img src="src/rectangle.png" alt="rectangle"></button>
         <button id="ellipse"><img src="src/circle.png" alt="rectangle"></button>
         <button id="line"><img src="src/line.png" alt=""></button>
         <button id="draw"><img src="src/draw.png" alt=""></button>
         <button id="eraser"><img src="src/eraser.svg" alt=""></button>
-        <button id="grasp"><img src="src/grab.webp" alt=""></button>
+        <button id="pan"><img src="src/grab.webp" alt=""></button>
         <!-- <button id="lock"><img src="src/lock.png" alt=""></button> -->
          <label for = "lock" id="lock-label">
          <input type="checkbox" name="lock" id="lock"></input>
          <img id = "lock-image" src="src/lock.png" alt="">
          </label>
+    </nav>
+     <div class="button-grp">
+    <button class="share" id="share">Share</button>
+    <button class="library">Library</button>
+</div>
     </nav>
     <canvas id="whiteboard"></canvas>
     <nav id="properties" class="properties">
@@ -56,10 +62,7 @@
     <!-- <ul class="trial" id="trial"> -->
 
     </ul>
-    <div class="button-grp">
-    <button class="share" id="share">Share</button>
-    <button class="library">Library</button>
-</div>
+   
 <dialog  class="dialog-box" id="dialogBox" >
     <p class="dialog-box-heading">Live Collaboration</p>
     <p class="poppins-regular dialog-box-text">Invite people to collaborate on your drawing.</p>
@@ -69,7 +72,7 @@
 </div>
 </dialog>
 
-<dialog class = "dialog-box" id="stopBox"> 
+<dialog class = "dialog-box host" id="stopBox"> 
         <p class="stop-box-heading poppins-regular">Start Live Collaboration</p>
         <p class="username-label" for="username">Name: </p>
         <input class="username-input" type="text" name="username" id=creator-name" placeholder="Blue Blaze">
@@ -81,7 +84,7 @@
         </div>
 </dialog>
 
-<dialog class = "dialog-box" id="inputBox">
+<dialog class = "dialog-box participant" id="inputBox">
         <p class="stop-box-heading poppins-regular">Paste the Link to Join</p>
         <p class="username-label" for="username">Name: </p>
         

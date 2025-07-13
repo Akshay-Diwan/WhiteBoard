@@ -2,16 +2,17 @@ import canvas from './Dom.js'
 export function dashedBorder(x, y, width, length){
   if (canvas.getContext) {
     const ctx = canvas.getContext("2d");
-    ctx.setLineDash([4, 2]);
-    ctx.lineDashOffSet = 5;
+    ctx.strokeStyle = '#3C096C'
+    ctx.lineWidth = 2
+    // ctx.setLineDash([4, 2]);
+    // ctx.lineDashOffSet = 5;
     ctx.strokeRect(x - 10, y - 10, width + 20, length + 20);
     // ctx.beginPath();
-    ctx.setLineDash([1, 0]);
     ctx.strokeRect(x - 10 - 7, y - 10 - 7, 7, 7);
     ctx.strokeRect(x - 10 + width + 20, y - 10 - 7, 7, 7);
     ctx.strokeRect(x - 10 + width + 20, y - 10 + length + 20, 7, 7);
     ctx.strokeRect(x - 10 - 7, y - 10 + length + 20, 7, 7);
-    ctx.setLineDash([1, 0]);
+    ctx.strokeStyle = "#000000"
   }
 }
 export function createRectangle(rectangle){
@@ -93,19 +94,28 @@ export function createRectangle(rectangle){
       ctx.fillStyle = '#0000FF00';
   }
   }
-  export function createArbitary(shape, multX = 1, multY = 1,moveX = 0, moveY = 0){
+  export function createArbitary(shape, multX = 1, multY = 1,fixedCorner_x = 0, fixedCorner_y = 0, moveX = 0, moveY = 0){
     if(!shape.points){
       return;
     }
-    shape.points = JSON.parse(shape.points).map((point) => ({
-      x: point.x * multX + moveX,
-      y: point.y * multY + moveY
+    console.log("Draw shape x : " + shape.x)
+    if(shape.x){
+      shape.points = JSON.parse(shape.points).map((point) => ({
+      x: (point.x - fixedCorner_x) * multX + fixedCorner_x + moveX,
+      y: (point.y - fixedCorner_y) * multY + fixedCorner_y + moveY
     }));
+    }
+    else{
+      shape.points = JSON.parse(shape.points).map((point) => ({
+      x: (point.x),
+      y: (point.y)
+    }));
+    }
   
     if (canvas.getContext) {
       const ctx = canvas.getContext("2d");
       ctx.strokeStyle = shape.color || '#000000';
-      ctx.lineWidth = shape.strokeWidth || 5;
+      ctx.lineWidth = shape.strokeWidth || 5
       ctx.globalAlpha = shape.opacity || 1;
       //handwritten
       ctx.beginPath();
@@ -145,6 +155,19 @@ export function createRectangle(rectangle){
 
     }
   }
+  export function zoomCanvas(center_x, center_y, scale) {
+    if(canvas.getContext){
+      const ctx = canvas.getContext('2d');  
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      clearCanvas()
+      ctx.translate(center_x, center_y)
+      // ctx.scale(scale, scale)
+      canvas.width = window.innerWidth * scale;
+      canvas.height = window.innerHeight * scale;
+      ctx.translate(-center_x*scale, -center_y*scale)
+      
+    }
+}
   export default function clearCanvas(){
     if(canvas.getContext){
       const ctx = canvas.getContext("2d");
