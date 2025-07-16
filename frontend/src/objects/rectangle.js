@@ -1,4 +1,5 @@
 import canvas from './Dom.js'
+import { handleMouseMove, handleTextFieldChange } from '../main.js';
 export function dashedBorder(x, y, width, length){
   if (canvas.getContext) {
     const ctx = canvas.getContext("2d");
@@ -135,25 +136,65 @@ export function createRectangle(rectangle){
   }
   }
   export function createTextField(shape){
-    if(canvas.getContext){
-      const ctx = canvas.getContext("2d");
-      console.log(shape.text);
-      console.log(shape.x);
-      console.log(shape.y);
+    // if(canvas.getContext){
+    //   const ctx = canvas.getContext("2d");
+    //   console.log(shape.text);
+    //   console.log(shape.x);
+    //   console.log(shape.y);
     
 
-      // ctx.fillText(shape.text, shape.x, shape.y);
-      ctx.font = shape.font; // Set the font
-      ctx.fillStyle = shape.color || "black";
-      ctx.textBaseline = "hanging";
-      ctx.fillText(shape.text, shape.x, shape.y);
-      const text = ctx.measureText(shape.text);
-      console.log("width of text : " + text.width);
-      shape.width = text.width;
-      console.log(shape.height);
-      console.log(shape.width);
-
-    }
+    //   // ctx.fillText(shape.text, shape.x, shape.y);
+    //   ctx.font = shape.font; // Set the font
+    //   ctx.fillStyle = shape.color || "black";
+    //   ctx.textBaseline = "hanging";
+    //   ctx.fillText(shape.text, shape.x, shape.y);
+    //   const text = ctx.measureText(shape.text);
+    //   console.log("width of text : " + text.width);
+    //   shape.width = text.width;
+    //   console.log(shape.height);
+    //   console.log(shape.width);
+    
+    // }
+    if(canvas.getContext){
+      // const ctx = canvas.getContext("2d");
+      let textfield = document.createElement("textarea");
+      textfield.classList.add("user-text");
+      textfield.style.resize = "none";
+      textfield.style.position = "absolute";
+      textfield.placeholder = "Start typing";
+      textfield.style.font = shape.font;
+      textfield.style.color = shape.color || 'black';
+      textfield.style.opacity = shape.opacity || 1;
+      textfield.rows = 1;
+      if(shape.text !== null) textfield.value = shape.text;
+      textfield.style.top = `${shape.y}px`;
+      textfield.style.width = `${shape.width}px`;
+      // textfield.style.height = `${textfield.scrollHeight}px`;
+      // textfield.style.minHeight = `${shape.length}px`
+      textfield.id = shape.name;
+      textfield.style.left = `${shape.x}px`;
+      textfield.addEventListener("change", (e)=> handleTextFieldChange(e));
+      textfield.addEventListener("mousemove", (e) => handleMouseMove(e));
+      
+      // ctx.strokeRect(shape.x, shape.y, shape.width, shape.length)
+      let duplicates = document.querySelectorAll(`#${textfield.id}`);
+      duplicates.forEach(duplicate => duplicate.remove());
+      document.body.appendChild(textfield);
+      let textfield_height = getComputedStyle(textfield).height;
+      shape.length = (Number)(textfield_height.substring(0,textfield_height.length - 2));
+      console.log(`shape width : ${shape.width}, shapw length : ${shape.length}`);
+      // textfield.style.fontSize  = `${shape.length/shape.rows}px`;
+      // console.log("textbox line height : " + getComputedStyle(textfield).lineHeight);
+      // console.log("textbox height : " + textfield_height);
+      let textfield_lineHeight = getComputedStyle(textfield).fontSize;
+      textfield_lineHeight  = (Number)(textfield_lineHeight.substring(0, textfield_lineHeight.length - 2)) * 1.2;
+      console.log("Line Height : " + textfield_lineHeight)
+      shape.rows = shape.length/textfield_lineHeight;
+      console.log(shape.rows);
+      return shape;
+    }  
+    
+    
   }
   export function zoomCanvas(center_x, center_y, scale) {
     if(canvas.getContext){
@@ -172,6 +213,11 @@ export function createRectangle(rectangle){
     if(canvas.getContext){
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let textareaList  = document.querySelectorAll('textarea');
+      for(let i = 0; i < textareaList.length; i++){
+          document.body.removeChild(textareaList[i]);
     }
+    
   };
+}
   

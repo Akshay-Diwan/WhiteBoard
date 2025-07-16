@@ -1,7 +1,9 @@
-import canvas,* as dom from './objects/Dom.js';
+import './style.css'
+import canvas,* as dom from './objects/Dom';
 import clearCanvas,{createRectangle, createEllipse, createLine, createArbitary, createTextField, zoomCanvas} from './objects/rectangle.js';
 import { onEdge, inRange, inShape} from './objects/MousePositions.js';
 import { dashedBorder } from './objects/rectangle.js';
+import { io } from 'socket.io-client';
 // import rough from 'roughjs';
 
 let canvasDimensions = {
@@ -17,13 +19,12 @@ let shapes =[];
 let scale = 1;
 let h = 0;
 let ch = 0;
-let ph = 0;
 let k  = 0;
 let ck = 0;
-let pk = 0;
+
 let sharing = false;
 if(localStorage.getItem('shapes')) shapes = JSON.parse(localStorage.getItem('shapes'));
-const socket = io();
+const socket = io('http://localhost:8080');
 socket.on('creating shape', (currentShape)=>{
   console.log('here we are in recieved messsage', currentShape);
   clearCanvas();
@@ -43,6 +44,9 @@ socket.on('canvas dimensions', (dimensions)=>{
   canvasDimensions = {...dimensions};
   localStorage.setItem('canvas height', canvasDimensions.height);
   resizeCanvas();
+})
+socket.on('new user joined', (count) => {
+  dom.participantsNumber.innerText = count; 
 })
 const sendToServer = (identifier, message)=>{
   if(sharing){
@@ -332,7 +336,12 @@ const graspClicked = ()=>{
       }
 }
 const handleShareClick = ()=>{
-  dom.dialog.showModal();
+  if(sharing){
+    dom.stopbox.showModal();
+  }
+  else{
+    dom.dialog.showModal();
+  }
 }
 const handleDialogClick =(e)=>{
   try{
@@ -347,16 +356,18 @@ const handleStartLiveClick = (e)=>{
   e.preventDefault();
   dom.dialog.close();
   dom.stopbox.showModal();
+  dom.shareBtn.style.backgroundColor = "green";
+  dom.participantsNumber.style.visibility = "visible";
   dom.collabLink.innerText = socket.id;
   sharing = true;
   localStorage.setItem('roomID', socket.id);
   socket.emit('join',localStorage.getItem('roomID'));
-  
-  
 }
 const handleStopLiveClick = (e)=>{
   e.preventDefault();
   socket.emit('leave', localStorage.getItem('roomID'));
+  dom.shareBtn.style.backgroundColor = "#3C096C"
+  dom.participantsNumber.style.visibility = "hidden";
   localStorage.removeItem('roomID');
   sharing = false;
   dom.stopbox.close();
@@ -364,6 +375,8 @@ const handleStopLiveClick = (e)=>{
 const handleCloseClick = (e)=>{
   e.preventDefault();
   dom.inputBox.close();
+  dom.shareBtn.style.backgroundColor = "#3C096C"
+  dom.participantsNumber.style.visibility = "hidden";
 }
 const handleJoinAnother= (e)=>{
   e.preventDefault();
@@ -375,6 +388,9 @@ const handleJoinClick = (e)=>{
   localStorage.setItem('roomID',dom.linkInput.value);
   console.log("Join button is clicked", localStorage.getItem('roomID'));
   socket.emit('join', localStorage.getItem('roomID'));
+  dom.shareBtn.style.backgroundColor = "green";
+  dom.participantsNumber.style.visibility = "visible";
+
   sharing = true;
   dom.inputBox.close();
 }
@@ -401,6 +417,7 @@ const deleteDashedBorder = (x, y, width, length) => {
 
 // || HANDLING MOUSE EVENTS
 const handleMouseDown = (e) => {
+  console.log("Handling mouse down")
 // console.log("rect.left: " + rect.left)
 // console.log("rect.right:" + rect.top)
 let [mouseX, mouseY] = scaleMousePosition(e.pageX, e.pageY)
@@ -487,7 +504,7 @@ return;
 }
 };
 // ||  MOUSE MOVE 
-const handleMouseMove = (e) => {
+export const handleMouseMove = (e) => {
 let [mouseX, mouseY] = scaleMousePosition(e.pageX, e.pageY)
   if (!permission || !command){
     if(command){
@@ -598,12 +615,19 @@ let [mouseX, mouseY] = scaleMousePosition(e.pageX, e.pageY)
     currentShape.width = Math.abs(fixedCorner.x - mouseX);
     currentShape.length = Math.abs(fixedCorner.y - mouseY);
     if(currentShape.createShape === 'createTextField'){
-      currentShape.font = `${currentShape.length * 0.7}px "Indie Flower", cursive`;
+      // console.log("Mei yaha tak pauch gaya")
+      console.log("rows : " + currentShape.rows);
+      currentShape.font = `${currentShape.length / (currentShape.rows * 1.2)}px "Indie Flower", cursive`;
+      console.log("Font style "  + currentShape.font);
+      dashedBorder(currentShape.x, currentShape.y , currentShape.width, currentShape.length)
     }
     shapes.map(shape => shapeCreator[shape.createShape](shape));
     localStorage.setItem('shapes',JSON.stringify([...shapes, currentShape]));
     if(currentShape.points){
       shapeCreator[currentShape.createShape](currentShape, scaleX, scaleY, fixedCorner.x, fixedCorner.y);
+    }
+    else if(currentShape.createShape === 'createTextField'){
+      currentShape = shapeCreator[currentShape.createShape](currentShape);
     }
     else{
       shapeCreator[currentShape.createShape](currentShape);
@@ -632,6 +656,7 @@ let [mouseX, mouseY] = scaleMousePosition(e.pageX, e.pageY)
 }
 }
 const handleMouseUp = () => {
+  console.log("Handling mouse up")
     // check lock condition
   // if(!dom.lockBtn.checked){
   //   console.log("lock check status: " + dom.lockBtn.check);
@@ -639,14 +664,29 @@ const handleMouseUp = () => {
   // }
   if(command === null || currentShape === null || currentShape.name === null){  // Property card is shown if object is selected
     dom.propertiesCard.style.visibility = "hidden";
+    // dom.textPropertiesCard.style.visibility = "hidden";
     currentShape = null;
   }
   else{
+    if(currentShape.createShape === 'createTextField'){
+      dom.textPropertiesCard.style.visibility = "visible";
+      dom.textOpacityProperty.value = currentShape.opacity * 10 || 10;
+      dom.textColorProperty.value = currentShape.color || '#000000';
+    }
+    else{
+       if(currentShape.createShape === 'createArbitary' || currentShape.createShape === 'createLine'){
+      dom.backgroundWrapper.style.visibility = "hidden";
+    }
+    else{
+      dom.backgroundWrapper.style.visibility = 'visible';
+    }
     dom.propertiesCard.style.visibility = "visible";
     dom.opacityProperty.value = currentShape.opacity * 10 || 10;
     dom.backgroundProperty.value = currentShape.background || '#000000';
     dom.colorProperty.value = currentShape.color || '#000000';
     dom.strokeWidthProperty.value = (currentShape.strokeWidth === 1)?"0":`${currentShape.strokeWidth * 2}`;
+    }
+   
   }
   if(command === editRect){
     canvas.classList.remove('create-ne');
@@ -716,7 +756,7 @@ const handleMouseUp = () => {
       case draw:
         drawSelected();
         break;
-      case  erase:
+      case erase:
         eraserSelected();
         break;
 
@@ -742,19 +782,21 @@ const handledblclick = (e)=>{
     currentShape = {
     name : `shape${idx}`,
     createShape: 'createTextField',
-    text: 'trial text',
+    text: null,
     font: '30px "Indie Flower", cursive',
-    length: 30
-    
+    length: 30,
+    width: 100
   }
   idx = idx + 1;
   localStorage.setItem('idx', idx);
   sendIndex(idx);
-  currentShape.x = mouseX;
-  currentShape.y = mouseY;
-  createTextField(currentShape);
-  console.log("currentShape.height = " + currentShape.height);
-  dashedBorder(currentShape.x - 30, currentShape.y - 30, currentShape.width + 30, currentShape.length + 30);
+  currentShape.x = e.pageX;
+  currentShape.y = e.pageY;
+  currentShape = createTextField(currentShape);
+  console.log("current shape width : " + currentShape.width)
+  console.log("rows : " + currentShape.rows)
+  console.log(`currentshape.x = ${currentShape.x}, currentshape.y = ${currentShape.y}`);
+  dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.length);
   shapes = [...shapes, currentShape];
   localStorage.setItem('shapes', JSON.stringify(shapes));
   sendToServer('change in shapes', shapes);
@@ -791,31 +833,31 @@ const handleKeyDown = (e)=>{
     localStorage.setItem('shapes', JSON.stringify(shapes));
     sendToServer('change in shapes',shapes);
   }
-  else if(e.key.length === 1){
-    console.log("inside typing");
-    currentShape.text = currentShape.text + e.key;
-    clearCanvas();
-    const othershapes = shapes.filter(shape => shape.name != currentShape.name);
-    shapes = [...othershapes, currentShape];
-    shapes.map(shape => shapeCreator[shape.createShape](shape));
-    localStorage.setItem('shapes', JSON.stringify(shapes));
-    sendToServer('change in shapes',shapes);
-    dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.length);
-  }
-  else if(e.key === "Backspace" && currentShape.createShape === 'createTextField'){
-    currentShape.text = currentShape.text.substring(0, currentShape.text.length - 1);
-    clearCanvas();
-    const othershapes = shapes.filter(shape => shape.name != currentShape.name);
-    shapes = [...othershapes, currentShape];
-    shapes.map(shape => shapeCreator[shape.createShape](shape));
-    localStorage.setItem('shapes', JSON.stringify(shapes));
-    sendToServer('change in shapes',shapes);
-    dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.length);
+  // else if(e.key.length === 1){
+  //   console.log("inside typing");
+  //   currentShape.text = currentShape.text + e.key;
+  //   clearCanvas();
+  //   const othershapes = shapes.filter(shape => shape.name != currentShape.name);
+  //   shapes = [...othershapes, currentShape];
+  //   shapes.map(shape => shapeCreator[shape.createShape](shape));
+  //   localStorage.setItem('shapes', JSON.stringify(shapes));
+  //   sendToServer('change in shapes',shapes);
+  //   dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.length);
+  // }
+  // else if(e.key === "Backspace" && currentShape.createShape === 'createTextField'){
+  //   currentShape.text = currentShape.text.substring(0, currentShape.text.length - 1);
+  //   clearCanvas();
+  //   const othershapes = shapes.filter(shape => shape.name != currentShape.name);
+  //   shapes = [...othershapes, currentShape];
+  //   shapes.map(shape => shapeCreator[shape.createShape](shape));
+  //   localStorage.setItem('shapes', JSON.stringify(shapes));
+  //   sendToServer('change in shapes',shapes);
+  //   dashedBorder(currentShape.x, currentShape.y, currentShape.width, currentShape.length);
 
-  }
-  if(e.keyCode === 32 && currentShape.createShape === 'createTextField'){
-    e.preventDefault();
-  }
+  // }
+  // if(e.keyCode === 32 && currentShape.createShape === 'createTextField'){
+  //   e.preventDefault();
+  // }
  
   
 }
@@ -912,17 +954,28 @@ function handleScroll() {
 function handleWheel(e){
   if(e.ctrlKey || Math.abs(e.deltaY) < 10 && scroll){
     e.preventDefault()
-    let zoom_factor = e.deltaY > 0 ? 0.99 : 1.01
-    ch = ch +  (e.pageX - h) / scale;
-    h = e.pageX;
-    ck = ck +  (e.pageY - k) / scale;
-    k = e.pageY;
-    scale *= zoom_factor
-    scale = Math.min(Math.max(scale, 0.5), 5);
-    zoomCanvas(e.pageX, e.pageY, scale);
-    shapes.map(shape => shapeCreator[shape.createShape](shape));
-    if(currentShape && currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
+    // let zoom_factor = e.deltaY > 0 ? 0.99 : 1.01
+    // ch = ch +  (e.pageX - h) / scale;
+    // h = e.pageX;
+    // ck = ck +  (e.pageY - k) / scale;
+    // k = e.pageY;
+    // scale *= zoom_factor
+    // scale = Math.min(Math.max(scale, 0.5), 5);
+    // zoomCanvas(e.pageX, e.pageY, scale);
+    // shapes.map(shape => shapeCreator[shape.createShape](shape));
+    // if(currentShape && currentShape.createShape) shapeCreator[currentShape.createShape](currentShape);
   }
+}
+function handleSaveClick(){
+  clearCanvas()
+  shapes.map(shape => shapeCreator[shape.createShape](shape))
+  const imgURL = canvas.toDataURL('image/png')
+  const link = document.createElement('a')
+  link.href = imgURL;
+  link.download = 'whiteboard.png';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 function scaleMousePosition(mouseX, mouseY){
    return [(mouseX - h) / scale + ch ,(mouseY - k) / scale + ck]
@@ -933,6 +986,24 @@ function copyToClipboard(){
   .then(()=>alert("Copied"))
   .catch(()=>alert("Error ocurred in copying"))
 }
+
+export function handleTextFieldChange(e){
+  console.log("Inside handleTextField : " + e.target.value)
+    let text_field_index = shapes.findIndex(shape => shape.name === e.target.id);
+    let text_field_shape = shapes[text_field_index]
+    console.log("Text Field Index: ");
+    console.log(text_field_index);
+    console.log("Text Field Shape");
+    console.log(text_field_shape);
+    text_field_shape.text = e.target.value;
+    shapes[text_field_index] = text_field_shape;
+    console.log(shapes);
+    console.log(currentShape);
+    console.log(command);
+    clearCanvas();
+    shapes.map((shape)=>shapeCreator[shape.createShape](shape));
+
+  }
 // // Initial resize
 resizeCanvas();
 
@@ -955,7 +1026,10 @@ dom.colorProperty.addEventListener("change", handleColorChange);
 dom.strokeWidthProperty.addEventListener("change", handleStrokeWidthChange);
 dom.backgroundProperty.addEventListener("change", handleBackgroundChange);
 dom.opacityProperty.addEventListener("change", handleOpacityChange);
+dom.textColorProperty.addEventListener("change", handleColorChange);
+dom.textOpacityProperty.addEventListener("change", handleOpacityChange);
 dom.shareBtn.addEventListener("click", handleShareClick);
+dom.saveBtn.addEventListener("click", handleSaveClick);
 dom.startLive.addEventListener("click", handleStartLiveClick);
 dom.stopLive.addEventListener("click", handleStopLiveClick);
 dom.closeBtn.addEventListener("click", handleCloseClick)
@@ -964,7 +1038,6 @@ dom.joinbtn.addEventListener("click", handleJoinClick)
 dom.dialog.addEventListener("click", handleDialogClick);
 dom.stopbox.addEventListener("click", handleDialogClick);
 dom.copyBtn.addEventListener("click", copyToClipboard);
-
 console.log(dom.colorBtns);
 for(let j in dom.colorBtns) {
   if(!Number.isFinite(dom.colorBtns[j]))

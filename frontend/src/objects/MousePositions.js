@@ -83,7 +83,7 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
     console.log("inside inShape function...");
     if(shape.createShape === 'createRectangle' || shape.createShape === 'createTextField'){
       if(e.mouseX > shape.x && e.mouseX < shape.width + shape.x && e.mouseY > shape.y && e.mouseY < shape.y + shape.length){
-        console.log('inside rectangle');
+        console.log('insie rectangle');
         return true;
       }
     }
@@ -108,7 +108,21 @@ export const onEdge = (rectangle, x, y) => { // Check if the pointer is near the
     }
     if(shape.createShape === 'createLine'){
       console.log("first slope: "+(shape.y - e.mouseY)/(shape.x - e.mouseX) + " second slope: "+(shape.y - shape.endY)/(shape.x - shape.endX) );
-      if(e.mouseX > shape.x && e.mouseX < shape.endX && e.mouseY > shape.y && e.mouseY < shape.endY){
+      console.log()
+      const m = (shape.y - shape.endY)/(shape.x - shape.endX);
+      const c = shape.y - m * shape.x;
+      let dist_line = Math.abs(e.mouseY - m * e.mouseX - c) / Math.sqrt(m*m + 1)
+      if(isNaN(m)){
+        console.log(e.mouseX)
+        console.log(shape.x)
+        dist_line = Math.abs(e.mouseX - shape.x)
+        console.log("Distance : " + dist_line);
+        if(e.mouseX > Math.min(shape.x,shape.endX) && e.mouseX < Math.max(shape.endX,shape.x) && dist_line < 10){
+          console.log('inside line');
+          return true;
+        }
+      }
+      else if(e.mouseX > Math.min(shape.x,shape.endX) && e.mouseX < Math.max(shape.endX,shape.x) && e.mouseY > Math.min(shape.y,shape.endY) && e.mouseY < Math.max(shape.endY, shape.y) && dist_line < 20){
         console.log('inside line');
         return true;
       }
